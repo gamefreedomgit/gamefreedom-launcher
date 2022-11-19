@@ -1,0 +1,9 @@
+appId: 'github.com/GameFreedomGG/Launcher-Release'
+productName: 'Whitemane Launcher'
+publish: {provider: github, releaseType: draft, vPrefixedTagName: true}
+forceCodeSigning: false
+
+asar: true
+
+directories:
+  output: ./dist

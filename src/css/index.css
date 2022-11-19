@@ -1,0 +1,522 @@
+* {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: 1px;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body, html {
+  margin: 0;
+  height: 100%;
+  background: #202020;
+  overflow-y: hidden; /* Hide vertical scrollbar */
+  overflow-x: hidden; /* Hide horizontal scrollbar */
+}
+
+#background {
+  width: 100%;
+  height: 100%;
+}
+
+input {
+  border: none;
+}
+
+header {
+  -webkit-app-region: drag;
+  position: absolute;
+  top: 0;
+  background: #000000a0;
+  text-align: right;
+  z-index: 1;
+  width: 100%;
+  padding: 5px;
+}
+
+.part1 { grid-area: part1; }
+.part2 { grid-area: part2; }
+
+body > footer {
+  position: absolute;
+  display: grid;
+  grid-gap: 10px;
+  grid-template-areas: 'part1'
+                       'part2';
+  grid-template-columns: max-content;
+  bottom: 0;
+  background: #00000000;
+  width: 100%;
+  padding: 0 2.9vw 2.9vw 2.9vw;
+  pointer-events: none; 
+}
+
+body > footer .part1,
+body > footer .part2 {
+  width: 100%;
+}
+
+.button_selector {
+  width: 100%;
+  height: 100%;
+  background-color: #000000b5;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 5px;
+  font-size: 14px;
+  border: 1px solid #000000b5;
+  outline: none;
+  cursor: pointer;
+}
+
+.button_selector:hover {
+  background-color: #000000d9;
+  border: 1px solid #000000d9;
+} 
+
+.button_play {
+  background-image: url('../../assets/images/button1.png');
+  background-repeat: no-repeat;
+  background-color: transparent;
+  width: 301px;
+  height: 66px;
+  border: none;
+  outline: none;
+  font-size: 25px;
+  font-weight: 200;
+  text-transform: uppercase;
+  color: #3c2100;
+  cursor: pointer;
+  pointer-events: auto; 
+  transition: all 0.2s ease;
+}
+
+.button_play:not([disabled]):hover {
+  background-image: url('../../assets/images/button2.png');
+}
+
+.button_play:disabled {
+  background-image: url('../../assets/images/button3.png');
+  color: #202020;
+  cursor: default;
+}
+
+.settings, .minimize, .exit {
+  -webkit-app-region: no-drag;
+  background: none;
+  color: rgba(255, 255, 255, 0.85);
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  outline: none;
+}
+
+.settings:hover, .minimize:hover {
+  background: #0059ff2c;
+}
+
+input[type='file'] {
+  opacity: 0;    
+  height: 0;
+}
+
+video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
+  -o-object-position: center;
+     object-position: center;
+}
+
+#updateNotification.active
+{
+  visibility: visible;
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#updateNotification {
+  position: fixed;
+  top: 10%;
+  left: 20%;
+  width: 30vw;
+  padding: 20px;
+  transform: translate(-50%, -20%);
+  border-radius: 5px;
+  background: rgba(0,0,0,0.4);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  color: rgb(255,255,255);
+
+  visibility: hidden;
+  opacity: 0;
+  transition: 0.2s;
+}
+
+#firstTimeSetup.active
+{
+  visibility: visible;
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#firstTimeSetup
+{
+  position:fixed;
+  top: 50%;
+  height:50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30vw;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  background: rgba(0,0,0,0.4);
+  color: rgb(255,255,255);
+
+  visibility: hidden;
+  opacity: 0;
+  transition: 0.2s;
+}
+
+.fileUpload {
+  border: 1px solid rgb(255, 255, 255);
+  border-radius: 3px;
+  padding: 3px;
+}
+
+.fileUpload input {
+  overflow: hidden;
+  width: 0;
+}
+
+section.download{
+  background-color: #921a78;
+}
+
+section.button {
+  background-color: #1a73e8;
+}
+
+progress {
+  height: 100%;
+  width: 90vw;
+  background-color: #efefef1d;
+  border-radius: 10px;
+}
+
+progress:before {
+  content: attr(dataLabel);
+  font-size: 14px;
+  color: rgb(255, 255, 255, 0.87);
+  position: fixed;
+  border-radius: 10px;
+  padding: 0 10px;
+}
+
+progress::-webkit-progress-value {
+  background-color: #1a73e8;
+  border-radius: 10px;
+}
+
+progress::-moz-progress-bar {
+  background-color: #efefef1d;
+  border-radius: 10px;
+}
+
+progress::-webkit-progress-bar {
+  background-color: #efefef1d;
+  border-radius: 10px;
+}
+
+.online_state {
+  background: #de3535;
+  height: 18px;
+  width: 18px;
+  border-radius: 50px;
+  animation-name: glowing-border;
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  margin-top: 6px;
+  margin-right: 8px;
+}
+
+@keyframes glowing-border {
+  from {
+      border: 1px solid #852525 ;  
+      filter: blur(0.3px);
+  }
+  to {
+    outline: none;
+    border: 1px solid #d53d3d;
+    box-shadow: 1px 1px 10px #d53d3d; 
+  }
+}
+
+header button:last-child {
+  margin-right: 5px;
+}
+
+.btn_view_more {
+  width: 100%;
+  display: block;
+  margin-top: 10px;
+  text-decoration: none;
+  color: #fff;
+  background: #0e0e0e;
+  padding: 7px 20px;
+  text-align: center;
+}
+
+.part1, .part3 {
+  margin-right: 5px;
+}
+
+.part1 section {
+  height: 180px;
+  background: url('../../assets/placeholders/320x180.png');
+}
+
+.part1 section + section {
+  margin-top: 10px;
+}
+
+.part1 section div:first-child {
+  padding: 0 15px;
+}
+
+.part1 section div:first-child span {
+  font-size: 12px;
+}
+
+.part1 section div:last-child {
+  padding: 15px;
+  background: #00000063;
+  position: relative;
+  top: 108px;
+}
+
+/* The container <div> - needed to position the dropup content */
+.dropup {
+  display: inline-block;
+  max-height: 100%;
+  min-width: 100%;
+}
+
+/* Dropup content (Hidden by Default) */
+.dropup-content {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  right: 360px;
+  background-color: #f1f1f1;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+/* Links inside the dropup */
+.dropup-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+/* Change color of dropup links on hover */
+.dropup-content a:hover {background-color: #ddd}
+
+/* Show the dropup menu on hover */
+.dropup:hover .dropup-content {
+  display: block;
+}
+
+app-settings,
+app-install {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: transparent;
+  background-color: rgba(0,0,0,0.8);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+app-settings.show,
+app-install.show {
+  display: flex;
+}
+
+app-settings > div,
+app-install > div {
+  width: 100%;
+  max-width: 500px;
+  margin: auto;
+  background-color: #1C1E29;
+  padding: 30px;
+  padding-top: 25px;
+  border-radius: 5px;
+}
+
+app-settings hr,
+app-install hr {
+  height: 1px;
+  background-color: #9a9a9a;
+  border: none;
+}
+
+app-settings #gameLocationText {
+  outline: none;
+}
+
+app-settings section,
+app-install section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+app-settings label {
+  display: block;
+  color: #5F6170;
+  font-size: 16px;
+  font-weight: 600;
+  width: 200px;
+}
+
+app-settings ul li input {
+  background: #343747;
+  color: rgba(255, 255, 255, 0.87);
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 5px 10px;
+  margin-right: 5px;
+}
+
+app-settings input:read-only {
+  cursor: default;
+  pointer-events: none;
+}
+
+app-settings h1,
+app-install h1 {
+  margin: 0;
+  padding: 0;
+  font-size: 20px;
+}
+
+app-settings h2,
+app-install h2 {
+  margin: 0;
+  padding: 0;
+  font-size: 16px;
+  color: #e53a51;
+  margin-bottom: 10px;
+}
+
+app-settings ul,
+app-install ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+app-settings ul li,
+app-install ul li {
+  display: flex;
+  align-items: center;
+}
+
+app-settings ul li + li,
+app-install ul li + li {
+  margin-top: 10px;
+}
+
+app-settings footer,
+app-install footer {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #343747;
+}
+
+app-settings .button,
+app-install .button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background-color: #E53A51;
+  border-radius: 5px;
+  padding: 5px 15px;
+  color: rgba(255, 255, 255, 0.87);
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.1s ease;
+}
+
+app-settings .exit,
+app-settings .save,
+app-install .exit,
+app-install .save {
+  padding: 8px 15px;
+}
+
+app-settings .exit,
+app-install .exit {
+  background-color: transparent;
+}
+
+app-settings .button:hover,
+app-install .button:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+app-settings .button.exit:hover,
+app-install .button.exit:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+app-settings .button.edit,
+app-install .button.edit {
+  font-size: 15px;
+}
+
+app-settings .button.experiment,
+app-install .button.experiment {
+  background-color: #3D3AE5;
+}
+
+app-settings .button.experiment:hover,
+app-install .button.experiment:hover {
+  background-color: #5552f3;
+}
+
+app-settings #version {
+  font-size: 13px;
+  float: right;
+  margin-top: 10px;
+}
+
+app-settings section i,
+app-install section i {
+  margin-left: 5px;
+  font-size: 21px !important;
+  cursor: pointer;
+}
+
+app-settings section i:hover,
+app-install section i:hover {
+  color: #cacaca;
+}
+
+app-settings > div > span,
+app-install > div > span {
+  margin-left: 7px;
+  font-size: 17px;
+}

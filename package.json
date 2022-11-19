@@ -1,0 +1,111 @@
+{
+  "name": "launcher",
+  "productName": "Whitemane Launcher",
+  "version": "1.4.11",
+  "description": "WoW Launcher",
+  "main": "src/js/main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "echo \"No linting configured\"",
+    "build": "electron-builder build --win --publish never",
+    "deploy": "electron-builder build --win --publish always",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "debug": "electron-reload"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Project-Deus/Launcher-Release.git"
+  },
+  "keywords": [],
+  "config": {
+    "forge": {
+      "packagerConfig": {},
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "launcher"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {}
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {}
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "appdata-path": "^1.0.0",
+    "axios": "^0.21.0",
+    "bluebird": "^3.7.2",
+    "child_process": "^1.0.2",
+    "chmodr": "^1.2.0",
+    "compare-semver": "^1.1.0",
+    "electron-forge": "^5.2.4",
+    "electron-squirrel-startup": "^1.0.0",
+    "electron-sudo": "^4.0.12",
+    "electron-updater": "^4.3.5",
+    "fs-extra": "^10.0.0",
+    "git": "^0.1.5",
+    "lowdb": "^1.0.0",
+    "moment": "^2.29.1",
+    "node-abi": "^3.5.0",
+    "open-file-explorer": "^1.0.2",
+    "parse-torrent": "^9.1.0",
+    "regedit": "^5.0.0",
+    "update-electron-app": "^2.0.1",
+    "webtorrent": "^0.112.0",
+    "yarn": "^1.22.17"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^6.0.0-beta.54",
+    "@electron-forge/maker-deb": "^6.0.0-beta.54",
+    "@electron-forge/maker-rpm": "^6.0.0-beta.54",
+    "@electron-forge/maker-squirrel": "^6.0.0-beta.54",
+    "@electron-forge/maker-zip": "^6.0.0-beta.54",
+    "electron": "^21.1.1",
+    "electron-builder": "^22.14.13",
+    "electron-reload": "^1.5.0",
+    "electron-reloader": "^1.1.0"
+  },
+  "build": {
+    "win": {
+      "icon": "assets/images/icon.png",
+      "target": [
+        "nsis"
+      ],
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "linux": {
+      "icon": "assets/images/icon.png",
+      "category": "Games",
+      "target": [
+        "AppImage"
+      ]
+    },
+    "directories": {
+      "buildResources": "resources",
+      "output": "release"
+    },
+    "files": [
+      "src/*",
+      "src/**/*",
+      "src/**/**/*",
+      "assets/**/*"
+    ]
+  }
+}
