@@ -23,13 +23,11 @@ function write_default(location)
             log.error(error);
             return;
         }
-        else
-        {
-            global.userSettings = default_settings;
-            global.mainWindow.webContents.send('setExpacSelectText', global.userSettings.previousExpansion);
-            global.mainWindow.webContents.send('setUserSettings', global.userSettings);
-            global.mainWindow.webContents.send('showFirstTimeSetup');
-        }
+        
+        global.userSettings = default_settings;
+        global.mainWindow.webContents.send('setExpacSelectText', global.userSettings.previousExpansion);
+        global.mainWindow.webContents.send('setUserSettings', global.userSettings);
+        //global.mainWindow.webContents.send('showFirstTimeSetup');
     });
 }
 
@@ -43,26 +41,25 @@ module.exports = {
             if (error)
             {
                 write_default(location);
+                return;
             }
-            else
+
+            if (settings.byteLength == 0 || settings == undefined)
             {
-                if (settings.byteLength == 0 || settings == undefined)
-                {
-                    write_default(location);
-                    return;
-                } 
+                write_default(location);
+                return;
+            } 
 
-                if (!globals.initialized)
-                {
-                    global.userSettings = JSON.parse(settings);
-                    global.mainWindow.webContents.send('setExpacSelectText', global.userSettings.previousExpansion);
-                    global.mainWindow.webContents.send('setUserSettings', global.userSettings);
-                    p2p.initialize();
+            if (!globals.initialized)
+            {
+                global.userSettings = JSON.parse(settings);
+                global.mainWindow.webContents.send('setExpacSelectText', global.userSettings.previousExpansion);
+                global.mainWindow.webContents.send('setUserSettings', global.userSettings);
+                p2p.initialize();
 
-                    if (global.userSettings.gameLocation == "" || global.userSettings.gameLocation == undefined)
-                    {
-                      global.mainWindow.webContents.send('showFirstTimeSetup');
-                    }
+                if (global.userSettings.gameLocation == "" || global.userSettings.gameLocation == undefined)
+                {
+                  global.mainWindow.webContents.send('showFirstTimeSetup');
                 }
             }
         })
@@ -75,12 +72,13 @@ module.exports = {
         fs.writeFile(location, JSON.stringify(global.userSettings), function(error)
         {
             if (error)
-                log.error(error);
-            else
             {
-                if (callback)
-                    callback();
+                log.error(error);
+                return
             }
+                
+            if (callback)
+                 callback();
         })
     }
 }   
