@@ -38,7 +38,7 @@ const get_runtime = new Date();
 
 
 // If development environment
-/*
+
 if (env === 'development') {
     try {
         require('electron-reloader')(module, {
@@ -47,7 +47,7 @@ if (env === 'development') {
         });
     } catch (_) { console.log('Error'); }    
 }
-*/
+
 
 // Handle creating / removing shortcuts on windows when (un)installing
 if (require('electron-squirrel-startup')) // eslint-disable-line global-require
@@ -62,7 +62,7 @@ function selectedGame()
   switch(userSettings.previousExpansion)
   {
       case "Whitemane":
-        string = "\\deus-classless";
+        string = "\\whitemane";
         break;
         
       default:
