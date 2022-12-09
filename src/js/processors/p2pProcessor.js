@@ -352,7 +352,7 @@ module.exports = {
                     global.mainWindow.webContents.send('hideProgressBar', true);
                     global.mainWindow.webContents.send('setProgressText', "Gathering game data...");
                     global.mainWindow.webContents.send('setProgressBarPercent', 0);
-                    global.version_buffer = globals.cataServerVersion;
+                    global.version_buffer = globals.serverVersion;
                     return;
                 }
 
