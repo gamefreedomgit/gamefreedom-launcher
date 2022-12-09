@@ -1,7 +1,7 @@
 {
   "name": "launcher",
   "productName": "Whitemane",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "WoW Launcher",
   "main": "src/js/main.js",
   "scripts": {
@@ -87,8 +87,7 @@
       "icon": "assets/images/icon.png",
       "target": [
         "nsis"
-      ],
-      "requestedExecutionLevel": "requireAdministrator"
+      ]
     },
     "linux": {
       "icon": "assets/images/icon.png",
