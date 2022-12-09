@@ -307,9 +307,9 @@ module.exports = {
                     global.p2pClient = new WebTorrent();
                 }
 
-                downloadOngoing = false
+                downloadOngoing = false;
                 global.userSettings.needUpdate = true;
-                global.mainWindow.webContents.send('setPlayButtonText', 'Update Game');
+                global.mainWindow.webContents.send('setPlayButtonText', 'Update Available');
                 global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('hideProgressBar', true);
                 global.mainWindow.webContents.send('setProgressText', "Gathering game data...");
@@ -332,7 +332,7 @@ module.exports = {
                 {
                     global.update_buffer = true;
                     global.userSettings.needUpdate = true;
-                    global.mainWindow.webContents.send('setPlayButtonText', 'Update Game');
+                    global.mainWindow.webContents.send('setPlayButtonText', 'Download');
                     global.mainWindow.webContents.send('setPlayButtonState', false);
                     global.mainWindow.webContents.send('hideProgressBar', true);
                     global.mainWindow.webContents.send('setProgressText', "Gathering game data...");
@@ -355,7 +355,7 @@ module.exports = {
                         await this.download();
                     }
                 }
-                else
+                else if (global.userSettings.gameDownloaded == true)
                 {
                     global.mainWindow.webContents.send('setPlayButtonText', 'Play');
                     global.mainWindow.webContents.send('setPlayButtonState', false);
