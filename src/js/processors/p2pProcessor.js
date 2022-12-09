@@ -10,7 +10,6 @@ const app_data_path     = require('appdata-path');
 const reg_edit          = require('regedit');
 const chmodr            = require('chmodr');
 
-let download;
 let downloadOngoing;
 let progressInterval;
 
@@ -80,53 +79,34 @@ function download_finished(link)
         global.p2pClient.destroy();
     }
 
-    let game_folder = link.path;
-    switch (userSettings.previousExpansion)
-    {
-            case "Whitemane":
-                game_folder = game_folder + "/deus-classless";
-                break;
-            default:
-                break;
-    }
-
     global.mainWindow.webContents.send('hideProgressBar', true);
     global.mainWindow.webContents.send('setProgressText', "");
     global.mainWindow.webContents.send('setPlayButtonState', false);
     global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+    global.mainWindow.webContents.send('setVerifyButtonState', false);
+    global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
 
     global.userSettings.gameDownloaded    = true;
     global.userSettings.needUpdate        = false;
     global.update_buffer                  = false;
-    global.version_buffer                 = globals.cataServerVersion;
+    global.version_buffer                 = globals.serverVersion;
     global.uploading                      = true;
     downloadOngoing                       = false;
-    global.userSettings.cataUserVersion   = globals.cataServerVersion;
+    global.userSettings.clientVersion     = globals.serverVersion;
     global.userSettings.gameLocation      = link.path;
+    global.userSettings.gameName          = link.name;
 
     require('./settingsProcessor.js').save(global.userData);
 
-    chmodr(link.path, 0o777, function(error)
+    let game_folder = global.userSettings.gameLocation + '/' + global.userSettings.gameName;
+
+    chmodr(game_folder, 0o777, function(error)
     {
         if (error)
             console.log('Failed to execute chmod', error);
         else
             console.log('Success');
     });
-
-    //?
-    let first_cache    = game_folder + "/Cache";
-    let second_cache = game_folder + "/Data/Cache";
-
-    try
-    {
-        fs.rmdirSync(first_cache, { recursive: true });
-        fs.rmdirSync(second_cache, { recursive: true });
-    }
-    catch (error)
-    {
-        log.error(error);
-    }
 }
 
 global.update_buffer = false;
@@ -154,7 +134,9 @@ module.exports = {
                 if (result != null)
                 {
                     if (compare.gt(result.version, global.appVersion))
+                    {
                         global.launcherUpdateFound = true;
+                    }
                 }
             });
         }
@@ -172,9 +154,9 @@ module.exports = {
     initialize: function()
     {
         global.p2pClient = new WebTorrent();
-        downloadOngoing    = false;
+        downloadOngoing  = false;
 
-        global.version_buffer = global.userSettings.cataUserVersion;
+        global.version_buffer = global.userSettings.clientVersion;
 
         global.updateLoopId = setInterval(function()
         {
@@ -198,91 +180,96 @@ module.exports = {
         }
     },
 
-    selectDownload: function(expansionName)
-    {
-        globals.ongoingDownloads.forEach(element => function()
-        {
-            if (element.name == expansionName)
-            {
-                return element;
-            }
-        })
-    },
-
     download: async function()
     {
-        switch (global.userSettings.previousExpansion)
+        if (global.userSettings.gameLocation == "" || global.userSettings.gameLocation == undefined)
+            return;
+
+        if (global.p2pClient != undefined)
         {
-            case "Whitemane":
+            if (global.p2pClient.destroyed != true)
             {
-                if (global.p2pClient != undefined)
-                {
-                    if (global.p2pClient.destroyed != true)
-                    {
-                        global.p2pClient.destroy();
-                    }
-
-                    global.p2pClient = new WebTorrent();
-                }
-
-                try
-                {
-                    // TODO: Replace this with a proper md5 checksum in future
-                    fs.unlinkSync(global.userSettings.gameLocation + "//deus-classless//Data//wow-update-base-39695.mpq");
-                }
-                catch(error)
-                {
-                    // TODO: Add some error handler here?
-                }
-
-                global.p2pClient.add(globals.cataDownload, { path: global.userSettings.gameLocation }, function(link)
-                {
-                    downloadOngoing = true;
-
-                    link.on('error', function(error)
-                    {
-                        downloadOngoing = false;
-                        log.error(error);
-                    });
-
-                    link.on('download', (bytes) =>
-                    {
-                        global.version_buffer = globals.cataServerVersion;
-                        downloadOngoing             = true;
-                    });
-
-                    progressInterval = setInterval(function()
-                    {
-                        var progress = getProgress(link);
-                        var text = progress.remaining + " | " + progress.percent + " (" + progress.downloaded + " / " + progress.total + " )" + " - " + progress.downloadSpeed;
-
-                        global.mainWindow.webContents.send('setProgressText', text);
-                        global.mainWindow.webContents.send('setProgressBarPercent', Math.round(link.progress * 100 * 100) / 100);
-                    }, 1000);
-
-                    link.on('done', function()
-                    {
-                        download_finished(link);
-                    });
-                });
-
-                break;
+                global.p2pClient.destroy();
             }
-            case "WotLK":
-            {
-                break;
-            }
-            default:
-            {
-                //! Unhandled game-client error?
-                break;
-            }
+
+            global.p2pClient = new WebTorrent();
         }
+
+        try
+        {
+            // TODO: Replace this with a proper md5 checksum in future
+            fs.unlinkSync(global.userSettings.gameLocation);
+        }
+        catch(error)
+        {
+            // TODO: Add some error handler here?
+        }
+
+        var torrent = global.userSettings.gameName;
+
+        switch (global.userSettings.gameName)
+        {
+            case 'maelstrom':
+                torrent = globals.cataDownload;
+                break;
+            case 'deus-classless':
+                torrent = globals.deusDownload;
+                break;
+            default:
+                torrent = globals.cataDownload;
+                break;
+        }
+
+        global.p2pClient.add(torrent, { path: global.userSettings.gameLocation }, function(link)
+        {
+            downloadOngoing = true;
+
+            link.on('error', function(error)
+            {
+                downloadOngoing = false;
+                log.error(error);
+            });
+
+            link.on('download', (bytes) =>
+            {
+                global.version_buffer = globals.serverVersion;
+                downloadOngoing       = true;
+            });
+
+            progressInterval = setInterval(function()
+            {
+                var progress = getProgress(link);
+                var text = progress.remaining + " | " + progress.percent + " (" + progress.downloaded + " / " + progress.total + " )" + " - " + progress.downloadSpeed;
+
+                global.mainWindow.webContents.send('setProgressText', text);
+                global.mainWindow.webContents.send('setProgressBarPercent', Math.round(link.progress * 100 * 100) / 100);
+            }, 1000);
+
+            link.on('done', function()
+            {
+                download_finished(link);
+            });
+        });
     },
 
     checkForGameUpdate: async function(callback)
     {
-        var cata = await module.exports.queryBuffer(globals.cataDownload);
+        var torrent = global.userSettings.gameName;
+
+        switch (global.userSettings.gameName)
+        {
+            case 'maelstrom':
+                torrent = globals.cataDownload;
+                break;
+            case 'deus-classless':
+                torrent = globals.deusDownload;
+                break;
+            default:
+                torrent = globals.cataDownload;
+                break;
+        }
+
+        var cata = await module.exports.queryBuffer(torrent);
 
         if (cata != undefined)
         {
@@ -303,11 +290,11 @@ module.exports = {
 
             ajax.repos.forEach(element =>
             {
-                if (element.name == "deus-classless")
-                    globals.cataServerVersion = element.version;
+                if (element.name == global.userSettings.gameName)
+                    globals.serverVersion = element.version;
             });
 
-            if ((global.version_buffer < globals.cataServerVersion) && downloadOngoing == true)
+            if ((global.version_buffer < globals.serverVersion) && downloadOngoing == true)
             {
                 let count = 0;
                 if (global.p2pClient != undefined)
@@ -322,14 +309,29 @@ module.exports = {
 
                 downloadOngoing = false
                 global.userSettings.needUpdate = true;
-                global.mainWindow.webContents.send('setPlayButtonText', 'Update');
+                global.mainWindow.webContents.send('setPlayButtonText', 'Update Game');
                 global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('hideProgressBar', true);
-                global.mainWindow.webContents.send('setProgressText', "Gathering new patch data...");
+                global.mainWindow.webContents.send('setProgressText', "Gathering game data...");
                 global.mainWindow.webContents.send('setProgressBarPercent', 0);
-                global.version_buffer = globals.cataServerVersion;
+                global.version_buffer = globals.serverVersion;
 
-                var cata = await module.exports.queryBuffer(globals.cataDownload);
+                var torrent = global.userSettings.gameName;
+
+                switch (global.userSettings.gameName)
+                {
+                    case 'maelstrom':
+                        torrent = globals.cataDownload;
+                        break;
+                    case 'deus-classless':
+                        torrent = globals.deusDownload;
+                        break;
+                    default:
+                        torrent = globals.cataDownload;
+                        break;
+                }
+
+                var cata = await module.exports.queryBuffer(torrent);
                 if (cata.data != undefined)
                 {
                     global.cataServerBuffer = cata.data;
@@ -345,10 +347,10 @@ module.exports = {
                 {
                     global.update_buffer = true;
                     global.userSettings.needUpdate = true;
-                    global.mainWindow.webContents.send('setPlayButtonText', 'Update');
+                    global.mainWindow.webContents.send('setPlayButtonText', 'Update Game');
                     global.mainWindow.webContents.send('setPlayButtonState', false);
                     global.mainWindow.webContents.send('hideProgressBar', true);
-                    global.mainWindow.webContents.send('setProgressText', "Gathering new patch data...");
+                    global.mainWindow.webContents.send('setProgressText', "Gathering game data...");
                     global.mainWindow.webContents.send('setProgressBarPercent', 0);
                     global.version_buffer = globals.cataServerVersion;
                     return;
@@ -372,6 +374,9 @@ module.exports = {
                 {
                     global.mainWindow.webContents.send('setPlayButtonText', 'Play');
                     global.mainWindow.webContents.send('setPlayButtonState', false);
+
+                    global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+                    global.mainWindow.webContents.send('setVerifyButtonState', false);
                 }
             }
         }

@@ -1,6 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap');
+
 * {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  letter-spacing: 1px;
+    font-family: "Open Sans", sans-serif;
   box-sizing: border-box;
   user-select: none;
 }
@@ -8,7 +9,11 @@
 body, html {
   margin: 0;
   height: 100%;
-  background: #202020;
+  background: #202020 url(../../assets/images/background.jpg) no-repeat center center fixed;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
   overflow-y: hidden; /* Hide vertical scrollbar */
   overflow-x: hidden; /* Hide horizontal scrollbar */
 }
@@ -26,11 +31,9 @@ header {
   -webkit-app-region: drag;
   position: absolute;
   top: 0;
-  background: #000000a0;
   text-align: right;
   z-index: 1;
   width: 100%;
-  padding: 5px;
 }
 
 .part1 { grid-area: part1; }
@@ -47,7 +50,7 @@ body > footer {
   background: #00000000;
   width: 100%;
   padding: 0 2.9vw 2.9vw 2.9vw;
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 body > footer .part1,
@@ -70,33 +73,28 @@ body > footer .part2 {
 .button_selector:hover {
   background-color: #000000d9;
   border: 1px solid #000000d9;
-} 
+}
 
 .button_play {
-  background-image: url('../../assets/images/button1.png');
-  background-repeat: no-repeat;
-  background-color: transparent;
-  width: 301px;
-  height: 66px;
   border: none;
   outline: none;
-  font-size: 25px;
-  font-weight: 200;
-  text-transform: uppercase;
-  color: #3c2100;
+  color: #fff;
+  background-color: #c51212; /* Blue c51212 */
+  border: 2px solid #0000;
+  padding: 8px 30px;
+  border-radius: 2px;
   cursor: pointer;
-  pointer-events: auto; 
+  pointer-events: auto;
   transition: all 0.2s ease;
 }
 
 .button_play:not([disabled]):hover {
-  background-image: url('../../assets/images/button2.png');
+  border: 2px solid #e54c4c; /* Blue ff4747 */
 }
 
 .button_play:disabled {
-  background-image: url('../../assets/images/button3.png');
-  color: #202020;
-  cursor: default;
+  background-color: #858585;
+  cursor: wait;
 }
 
 .settings, .minimize, .exit {
@@ -109,12 +107,12 @@ body > footer .part2 {
   outline: none;
 }
 
-.settings:hover, .minimize:hover {
-  background: #0059ff2c;
+.minimize:hover {
+  background: rgba(255, 255, 255, 0.125);
 }
 
 input[type='file'] {
-  opacity: 0;    
+  opacity: 0;
   height: 0;
 }
 
@@ -152,6 +150,7 @@ video {
   visibility: hidden;
   opacity: 0;
   transition: 0.2s;
+  z-index: 9999;
 }
 
 #firstTimeSetup.active
@@ -202,7 +201,7 @@ progress {
   height: 100%;
   width: 90vw;
   background-color: #efefef1d;
-  border-radius: 10px;
+  border-radius: 2px;
 }
 
 progress:before {
@@ -210,23 +209,23 @@ progress:before {
   font-size: 14px;
   color: rgb(255, 255, 255, 0.87);
   position: fixed;
-  border-radius: 10px;
+  border-radius: 2px;
   padding: 0 10px;
 }
 
 progress::-webkit-progress-value {
-  background-color: #1a73e8;
-  border-radius: 10px;
+  background-color: #c51212;
+  border-radius: 2px;
 }
 
 progress::-moz-progress-bar {
   background-color: #efefef1d;
-  border-radius: 10px;
+  border-radius: 2px;
 }
 
 progress::-webkit-progress-bar {
   background-color: #efefef1d;
-  border-radius: 10px;
+  border-radius: 2px;
 }
 
 .online_state {
@@ -244,13 +243,13 @@ progress::-webkit-progress-bar {
 
 @keyframes glowing-border {
   from {
-      border: 1px solid #852525 ;  
+      border: 1px solid #852525 ;
       filter: blur(0.3px);
   }
   to {
     outline: none;
     border: 1px solid #d53d3d;
-    box-shadow: 1px 1px 10px #d53d3d; 
+    box-shadow: 1px 1px 10px #d53d3d;
   }
 }
 
@@ -331,8 +330,16 @@ header button:last-child {
   display: block;
 }
 
+app-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
 app-settings,
-app-install {
+app-install,
+app-notification {
   display: none;
   position: fixed;
   z-index: 9999;
@@ -341,29 +348,32 @@ app-install {
   width: 100%;
   height: 100%;
   overflow: auto;
-  background-color: transparent;
-  background-color: rgba(0,0,0,0.8);
+  background-color: rgba(0,0,0,0.75);
   color: rgba(255, 255, 255, 0.87);
 }
 
 app-settings.show,
-app-install.show {
+app-install.show,
+app-notification.show {
   display: flex;
 }
 
 app-settings > div,
-app-install > div {
+app-install > div,
+app-notification > div {
   width: 100%;
-  max-width: 500px;
+  max-width: 50vw;
   margin: auto;
-  background-color: #1C1E29;
+  background-color: #252730;
+  background-clip: border-box;
   padding: 30px;
   padding-top: 25px;
   border-radius: 5px;
 }
 
 app-settings hr,
-app-install hr {
+app-install hr,
+app-notification hr {
   height: 1px;
   background-color: #9a9a9a;
   border: none;
@@ -374,7 +384,8 @@ app-settings #gameLocationText {
 }
 
 app-settings section,
-app-install section {
+app-install section,
+app-notification section {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -383,20 +394,18 @@ app-install section {
 
 app-settings label {
   display: block;
-  color: #5F6170;
   font-size: 16px;
-  font-weight: 600;
   width: 200px;
 }
 
 app-settings ul li input {
-  background: #343747;
   color: rgba(255, 255, 255, 0.87);
+  background-color: #111218;
   border: none;
-  border-radius: 5px;
+  border-radius: 4px;
   font-size: 14px;
-  font-weight: 600;
-  padding: 5px 10px;
+  padding: 7px 12px;
+  height: 38px;
   margin-right: 5px;
 }
 
@@ -406,95 +415,90 @@ app-settings input:read-only {
 }
 
 app-settings h1,
-app-install h1 {
+app-install h1,
+app-notification h1 {
   margin: 0;
   padding: 0;
   font-size: 20px;
 }
 
-app-settings h2,
-app-install h2 {
-  margin: 0;
-  padding: 0;
-  font-size: 16px;
-  color: #e53a51;
-  margin-bottom: 10px;
-}
-
 app-settings ul,
-app-install ul {
+app-install ul,
+app-notification ul {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 app-settings ul li,
-app-install ul li {
+app-install ul li,
+app-notification ul li {
   display: flex;
   align-items: center;
 }
 
 app-settings ul li + li,
-app-install ul li + li {
+app-install ul li + li,
+app-notification ul li + li {
   margin-top: 10px;
 }
 
 app-settings footer,
-app-install footer {
+app-install footer,
+app-notification footer {
   margin-top: 20px;
   padding-top: 10px;
   border-top: 1px solid #343747;
 }
 
+
 app-settings .button,
-app-install .button {
+app-install .button,
+app-notification .button {
   cursor: pointer;
   border: none;
   outline: none;
-  background-color: #E53A51;
-  border-radius: 5px;
-  padding: 5px 15px;
-  color: rgba(255, 255, 255, 0.87);
-  font-size: 16px;
-  font-weight: 600;
+  color: #fff;
+  background-color: #c51212;
+  border: 2px solid #0000;
+  padding: 8px 15px;
+  border-radius: 2px;
   transition: all 0.1s ease;
 }
 
-app-settings .exit,
-app-settings .save,
-app-install .exit,
-app-install .save {
-  padding: 8px 15px;
+app-settings .button:disabled,
+app-install .button:disabled,
+app-notification .button:disabled {
+  background-color: #858585;
+  border: 0 !important;
+  cursor: not-allowed;
+
 }
 
+
+
 app-settings .exit,
-app-install .exit {
+app-install .exit,
+app-notification .exit {
   background-color: transparent;
 }
 
 app-settings .button:hover,
-app-install .button:hover {
-  color: rgba(255, 255, 255, 1);
+app-install .button:hover,
+app-notification .button:hover {
+    border: 2px solid #e54c4c;
 }
 
 app-settings .button.exit:hover,
-app-install .button.exit:hover {
+app-install .button.exit:hover,
+app-notification .button.exit:hover {
   background-color: rgba(0, 0, 0, 0.2);
 }
 
 app-settings .button.edit,
-app-install .button.edit {
+app-install .button.edit,
+app-notification .button.edit {
   font-size: 15px;
-}
-
-app-settings .button.experiment,
-app-install .button.experiment {
-  background-color: #3D3AE5;
-}
-
-app-settings .button.experiment:hover,
-app-install .button.experiment:hover {
-  background-color: #5552f3;
 }
 
 app-settings #version {
@@ -504,19 +508,36 @@ app-settings #version {
 }
 
 app-settings section i,
-app-install section i {
+app-install section i,
+app-notification section i {
   margin-left: 5px;
   font-size: 21px !important;
   cursor: pointer;
 }
 
 app-settings section i:hover,
-app-install section i:hover {
+app-install section i:hover,
+app-notification section i:hover {
   color: #cacaca;
 }
 
 app-settings > div > span,
-app-install > div > span {
+app-install > div > span,
+app-notification > div > span {
   margin-left: 7px;
   font-size: 17px;
+}
+
+app-settings-button {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+app-settings-button .button {
+  font-size: 1rem;
+}
+
+app-settings-button .button:hover {
+  background: rgba(255, 255, 255, 0.125);
 }

@@ -6,14 +6,10 @@
         <title>Whitemane Launcher</title>
         <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' ">
         <link rel="stylesheet" href="../src/css/index.css">
+        <link rel="stylesheet" href="../src/vendor/font-awesome/css/font-awesome.min.css">
     </head>
     <body>
         <header>
-            <button class="button settings" id="settingsButton">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M10.5 1a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4H1.5a.5.5 0 0 1 0-1H10V1.5a.5.5 0 0 1 .5-.5ZM12 3.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5Zm-6.5 2A.5.5 0 0 1 6 6v1.5h8.5a.5.5 0 0 1 0 1H6V10a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5ZM1 8a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2A.5.5 0 0 1 1 8Zm9.5 2a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V13H1.5a.5.5 0 0 1 0-1H10v-1.5a.5.5 0 0 1 .5-.5Zm1.5 2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5Z"/>
-                </svg>
-            </button>
             <button class="button minimize" id="minimizeButton">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M2 8a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 8Z"/>
@@ -28,10 +24,9 @@
         </header>
         <content>
             <!-- <webview style="width:100%;height:100%;border:none;" src="https://whitemane.gg/"></webview> -->
-
-            <div class="background">
-                <img src="../assets/images/background.jpg" alt="background" id="background">
-            </div>
+            <app-content>
+                <img src="../assets/images/logo.png" style="max-width: 25vw;">
+            </app-content>
         </content>
         <footer>
             <section class="part1 download-button-section">
@@ -44,7 +39,7 @@
         <app-settings>
             <div>
                 <section>
-                    <h1>Settings</h1>
+                    <h1><i class="fa fa-wrench" aria-hidden="true"></i> Settings</h1>
                     <button class="button exit" id="settingsExit">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" stroke="currentColor" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M13.854 2.146a.5.5 0 0 1 0 .708l-11 11a.5.5 0 0 1-.708-.708l11-11a.5.5 0 0 1 .708 0Z"/>
@@ -55,14 +50,12 @@
                 <ul>
                     <li>
                         <label for="gameLocationText">Game location</label>
-                        <input type="text" id="gameLocationText" name="gameLocationText" value="Loading location..." readonly>
+                        <input type="text" id="gameLocationText" value="Loading location..." readonly>
                         <button class="button edit" id="selectDirectory">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001z"/>
-                            </svg>
+                            <i class="fa fa-folder-open" aria-hidden="true"></i> Change
                         </button>
                     </li>
-                    <li>
+                    <!-- <li>
                         <label for="gameLocationText">Launcher resolution</label>
                         <input type="text" id="gameLocationText" name="gameLocationText" value="1280 x 720" readonly>
                         <button class="button edit" id="selectDirectory">
@@ -70,54 +63,58 @@
                                 <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001z"/>
                             </svg>
                         </button>
-                    </li>
+                    </li> -->
                     <br>
-                    <h2>Experimental features</h2>
                     <li>
                         <label for="verifySelectedGame">Verify game integrity</label>
-                        <button class="button experiment" id="verifySelectedGame">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2zm2.354 4.854-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7 8.793l2.646-2.647a.5.5 0 0 1 .708.708z"/>
-                            </svg>
+                        <button class="button" disabled="true" id="verifyButton">
+                            <i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Game not found
                         </button>
                     </li>
-                    <li>
+                    <!-- <li>
                         <label for="clearCacheButton">Clear game cache</label>
-                        <button class="button experiment" id="clearCacheButton">
+                        <button class="button" id="clearCacheButton">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/>
                             </svg>
                         </button>
-                    </li>
+                    </li> -->
                 </ul>
                 <footer>
                     <button class="button save" id="settingsSave">Save</button>
-                    <button class="button exit" id="settingsCancel">Close</button>
-                    <span id="version"></span>
+                    <div id="version"></div>
                 </footer>
             </div>
         </app-settings>
         <app-install>
             <div>
-                <span> First Time Setup:</span>
+                <span><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> First Launch</span>
                 <hr>
                 <div>
                     <section>
-                        <span>Please select the location you want for your games:</span>    
-                            <button class="button firstSelectDirectory" id="firstSelectDirectory">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001z"/>
-                                </svg>
-                            </button>
+                        <span>Select the desired location of your game. <br/> If you have the game already installed, please select the game folder.</span>
                     </section>
+                    <button class="button firstSelectDirectory" id="firstSelectDirectory" style="float: right;">
+                        <i class="fa fa-folder-open" aria-hidden="true"></i> Select
+                    </button>
                 </div>
             </div>
         </app-install>
-        <div id="updateNotification" hidden>
-            <p id="message"></p>
-            <button id="updateCloseButton" style="float: right;">Close</button>
-            <button id="updateRestartButton" style="float: right;" hidden>Restart</button>
-        </div>
+        <app-settings-button>
+            <button class="button settings" id="settingsButton">
+                <i class="fa fa-wrench" aria-hidden="true"></i> Settings
+            </button>
+        </app-settings-button>
+        <app-notification>
+            <div>
+                <span><i class="fa fa-info-circle" aria-hidden="true"></i> New Update Available </span>
+                <hr>
+                <section>
+                    <span><p id="message"></span>
+                </section>
+                <button class="button" id="updateRestartButton" style="float: right;" hidden><i class="fa fa-bolt" aria-hidden="true"></i> Update</button>
+            </div>
+        </app-notification>
         <script>
             require('./index.js');
         </script>

@@ -4,9 +4,8 @@ const app_data_path                    = require('appdata-path');
 const electronSquirrelStartup          = require('electron-squirrel-startup');
 
 const playButton                 = document.querySelector("#playButton");
-const expacSelect                = document.querySelector('#expacSelect');
+const verifyButton               = document.querySelector("#verifyButton");
 const dropdownOptions            = document.querySelectorAll('.dropup-content a');
-const downloadInfo               = document.querySelector(".downloadInfo");
 const downloadBar                = document.querySelector(".download_progress");
 const progressBar                = document.querySelector(".progress-bar");
 const gameLocationText           = document.querySelector("#gameLocationText");
@@ -14,21 +13,14 @@ const settings_modal             = document.querySelector("app-settings");
 const first_time_setup           = document.querySelector("app-install");
 const firstDirectoryButton       = document.querySelector("#firstSelectDirectory");
 const directoryButton            = document.querySelector("#selectDirectory");
-const clearCacheButton           = document.querySelector("#clearCacheButton");
 const settingsButton             = document.querySelector("#settingsButton");
 const settingsSave               = document.querySelector("#settingsSave");
 const settingsExit               = document.querySelector("#settingsExit");
-const settingsCancel             = document.querySelector("#settingsCancel");
 const minimizeButton             = document.querySelector("#minimizeButton");
 const exitButton                 = document.querySelector("#exitButton");
 const version                    = document.getElementById('version');
-const updateNotification         = document.getElementById("updateNotification");
-const updateRestartButton        = document.getElementById('updateRestartButton');
-const updateCloseButton          = document.getElementById('updateCloseButton');
-const verifySelectedGame         = document.getElementById('verifySelectedGame');
-
-var userSettings;
-var clearCacheOnSave;
+const updateNotification         = document.querySelector("app-notification");
+const updateRestartButton        = document.querySelector('#updateRestartButton');
 
 //ipcRenderer.showErrorBox = function(title, content) {
 //    console.log(`${title}\n${content}`);
@@ -41,14 +33,6 @@ if (webview)
     {
         webview.insertCSS('app-navigation { padding-top: 35px; }');
     });
-}
-
-function handleOptionSelected(element)
-{
-    if (expacSelect)
-        expacSelect.textContent = element.target.textContent;
-
-    ipcRenderer.send('expacSelected', element.target.textContent);
 }
 
 ipcRenderer.on('showFirstTimeSetup', function(event)
@@ -64,22 +48,13 @@ ipcRenderer.on('closeFirstTimeSetup', function(event)
 ipcRenderer.on('setPlayButtonState', function(event, state)
 {
     if (playButton)
-    playButton.disabled = state;
-
-    if (expacSelect)
-        expacSelect.disabled = state;
+        playButton.disabled = state;
 })
 
 ipcRenderer.on('setPlayButtonText', function(event, string)
 {
     if (playButton)
         playButton.textContent = string;
-})
-
-ipcRenderer.on('setExpacSelectText', function(event, string)
-{
-    if (expacSelect)
-        expacSelect.textContent = string;
 })
 
 ipcRenderer.on('setProgressText', function(event, string)
@@ -94,18 +69,18 @@ ipcRenderer.on('setProgressBarPercent', function(event, percent)
         progressBar.value = percent;
 })
 
-ipcRenderer.on('setGameLocation', function(event, location)
+ipcRenderer.on('setUserSettings', function(event, string)
 {
-    console.log('Updating game location to: ' + location);
-
-    gameLocationText.value = location;
-    userSettings.gameLocation = location;
+    gameLocationText.value = string.gameLocation;
+    ipcRenderer.send("saveUserSettings", string);
 })
 
-ipcRenderer.on('setUserSettings', function(event, settings)
+ipcRenderer.on('setGameLocation', function(event, string)
 {
-    userSettings = settings;
-    gameLocationText.value = userSettings.gameLocation;
+    console.log('Updating game location to: ' + string);
+
+    gameLocationText.value = string;
+    global.userSettings.gameLocation = string;
 })
 
 ipcRenderer.on('hideProgressBar', function(event, bool)
@@ -117,9 +92,8 @@ playButton.addEventListener('click', function(event)
 {
     playButton.disabled = true;
     console.log("Clicked on update/download button");
-    if (playButton.textContent == "Download" || playButton.textContent == "Update")
+    if (playButton.textContent != "Play")
     {
-        //expacSelect.disabled   = true;
         downloadBar.hidden     = false;
         playButton.textContent = "Please wait...";
 
@@ -160,10 +134,10 @@ minimizeButton.addEventListener('click', function()
     ipcRenderer.send('minimize');
 })
 
-verifySelectedGame.addEventListener('click', function()
+verifyButton.addEventListener('click', function()
 {
-    expacSelect.disabled   = true;
     playButton.disabled    = true;
+    verifyButton.disabled  = true;
     downloadBar.hidden     = false;
     playButton.textContent = "Please wait...";
 
@@ -171,9 +145,22 @@ verifySelectedGame.addEventListener('click', function()
     ipcRenderer.send('beginVerify');
 })
 
+ipcRenderer.on('setVerifyButtonState', function(event, state)
+{
+    if (verifyButton)
+        verifyButton.disabled = state;
+})
+
+ipcRenderer.on('setVerifyButtonText', function(event, string)
+{
+    if (verifyButton)
+        verifyButton.innerHTML = string;
+})
+
 function show_modal_settings(show = false)
 {
     console.log("Clicked on settings button");
+
     if (!settings_modal)
         return;
 
@@ -210,11 +197,34 @@ function show_first_time_setup(show = false)
     }
 }
 
+function show_notification(show = false)
+{
+    console.error("0");
+
+    if (!updateNotification)
+        return;
+        console.error("1");
+
+    var exists = updateNotification.classList.contains('show');
+
+    if (show)
+    {
+        if (!exists)
+            updateNotification.classList.add('show');
+    }
+    else
+    {
+        if (exists)
+            updateNotification.classList.remove('show');
+    }
+}
+
 settingsButton.addEventListener('click', function()
 {
     show_modal_settings(true);
 })
 
+// TODO: Check and clear unsaved picks in case they persist upon next reopening of settings modal
 settingsExit.addEventListener('click', function()
 {
     show_modal_settings(false);
@@ -223,25 +233,6 @@ settingsExit.addEventListener('click', function()
 settingsSave.addEventListener('click', function()
 {
     show_modal_settings(false);
-
-    if (clearCacheOnSave)
-    {
-        ipcRenderer.send("clearCache");
-        clearCacheOnSave = false;
-    }
-
-    ipcRenderer.send("saveUserSettings", userSettings);
-})
-
-settingsCancel.addEventListener('click', function()
-{
-    // TODO: Check and clear unsaved picks in case they persist upon next reopening of settings modal
-    show_modal_settings(false);
-})
-
-clearCacheButton.addEventListener('click', function()
-{
-    ipcRenderer.send("clearCache");
 })
 
 ipcRenderer.send('app_version');
@@ -249,14 +240,9 @@ ipcRenderer.send('app_version');
 ipcRenderer.on('app_version', function(event, arg)
 {
   ipcRenderer.removeAllListeners('app_version');
-  version.innerText = 'Version ' + arg.version;
+  version.innerText = 'Version: ' + arg.version;
 });
 
-updateCloseButton.addEventListener('click', function()
-{
-    updateNotification.classList.remove('active');
-})
-  
 updateRestartButton.addEventListener('click', function()
 {
     ipcRenderer.send('restart_app');
@@ -266,15 +252,15 @@ ipcRenderer.on('update_available', function()
 {
     ipcRenderer.removeAllListeners('update_available');
     message.innerText = 'A launcher update is available. Downloading now...';
-    updateNotification.classList.add('active');
+    show_notification(true);
 });
-  
+
 ipcRenderer.on('update_downloaded', function()
 {
     ipcRenderer.removeAllListeners('update_downloaded');
-    message.innerText = 'Update downloaded, and needs to be installed. Restart now?';
+    message.innerText = 'Update downloaded, and needs to be installed. Update?';
     updateRestartButton.removeAttribute('hidden');
-    updateNotification.classList.add('active');
+    show_notification(true);
 });
 
 dropdownOptions.forEach(option => option.addEventListener('click', handleOptionSelected));

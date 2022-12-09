@@ -5,12 +5,11 @@ const log = require('./logProcessor.js');
 const ipcRenderer = require('electron').ipcRenderer;
 
 const default_settings = {
-    previousExpansion: "Whitemane",
+    gameName: "maelstrom",
     gameLocation: "",
     gameDownloaded: false,
     needUpdate: false,
-    cataUserVersion: 0,
-    wotlkUserVersion: 0
+    clientVersion: 0,
 }
 
 function write_default(location)
@@ -23,18 +22,17 @@ function write_default(location)
             log.error(error);
             return;
         }
-        
+
         global.userSettings = default_settings;
-        global.mainWindow.webContents.send('setExpacSelectText', global.userSettings.previousExpansion);
-        global.mainWindow.webContents.send('setUserSettings', global.userSettings);
-        //global.mainWindow.webContents.send('showFirstTimeSetup');
+        global.mainWindow.webContents.send('setUserSettings', default_settings);
+        global.mainWindow.webContents.send('showFirstTimeSetup');
     });
 }
 
 module.exports = {
     load: async function(fileLocation)
     {
-        const location = await fileLocation + "/" + "launcherSettings.conf";
+        const location = await fileLocation + "/" + "whitemane.conf";
 
         fs.readFile(location, function(error, settings)
         {
@@ -48,26 +46,24 @@ module.exports = {
             {
                 write_default(location);
                 return;
-            } 
+            }
 
             if (!globals.initialized)
             {
                 global.userSettings = JSON.parse(settings);
-                global.mainWindow.webContents.send('setExpacSelectText', global.userSettings.previousExpansion);
                 global.mainWindow.webContents.send('setUserSettings', global.userSettings);
-                p2p.initialize();
 
                 if (global.userSettings.gameLocation == "" || global.userSettings.gameLocation == undefined)
-                {
-                  global.mainWindow.webContents.send('showFirstTimeSetup');
-                }
+                    global.mainWindow.webContents.send('showFirstTimeSetup');
+
+                p2p.initialize();
             }
         })
     },
 
     save: async function( fileLocation, callback )
     {
-        const location = await fileLocation + "/" + "launcherSettings.conf";
+        const location = await fileLocation + "/" + "whitemane.conf";
 
         fs.writeFile(location, JSON.stringify(global.userSettings), function(error)
         {
@@ -76,9 +72,9 @@ module.exports = {
                 log.error(error);
                 return
             }
-                
+
             if (callback)
                  callback();
         })
     }
-}   
+}

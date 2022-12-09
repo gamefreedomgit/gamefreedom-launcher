@@ -1,7 +1,7 @@
 {
   "name": "launcher",
-  "productName": "Whitemane Launcher",
-  "version": "1.4.11",
+  "productName": "Whitemane",
+  "version": "1.0.0",
   "description": "WoW Launcher",
   "main": "src/js/main.js",
   "scripts": {
@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Project-Deus/Launcher-Release.git"
+    "url": "https://github.com/gamefreedomgit/gamefreedom-launcher"
   },
   "keywords": [],
   "config": {
