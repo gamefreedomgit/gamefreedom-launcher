@@ -316,21 +316,6 @@ module.exports = {
                 global.mainWindow.webContents.send('setProgressBarPercent', 0);
                 global.version_buffer = globals.serverVersion;
 
-                var torrent = global.userSettings.gameName;
-
-                switch (global.userSettings.gameName)
-                {
-                    case 'maelstrom':
-                        torrent = globals.cataDownload;
-                        break;
-                    case 'deus-classless':
-                        torrent = globals.deusDownload;
-                        break;
-                    default:
-                        torrent = globals.cataDownload;
-                        break;
-                }
-
                 var cata = await module.exports.queryBuffer(torrent);
                 if (cata.data != undefined)
                 {
