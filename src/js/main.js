@@ -64,13 +64,13 @@ function create_main_window()
     height: 720,
     minWidth: 1280,
     minHeight: 720,
-    maxWidth: 1280, // 1600
-    maxHeight: 720, // 900
+    maxWidth: 3820, // 1600
+    maxHeight: 2160, // 900
     icon: app.getAppPath() + '/assets/images/icon.png',
     backgroundColor: "#202225",
     movable: true,
-    resizable: false,
-    maximizable: false,
+    resizable: true,
+    maximizable: true,
     fullscreenable: false,
     frame: false,
     hasShadow: true,
@@ -113,6 +113,7 @@ function create_main_window()
           });
       });
 
+      global.mainWindow.maximize();
       global.mainWindow.show();
 
       let currentURL = global.mainWindow.webContents.getURL();
@@ -224,7 +225,7 @@ ipcMain.on('launchGame', function(event)
 {
   try
   {
-    let rootPath  = selectedFolder() + '/' + selectedGame();
+    let rootPath  = selectedFolder() + '\\' + selectedGame();
     let exePath   = rootPath + '\\Whitemane.exe';
 
     console.log(rootPath);
