@@ -541,3 +541,12 @@ app-settings-button .button {
 app-settings-button .button:hover {
   background: rgba(255, 255, 255, 0.125);
 }
+
+app-info {
+    color:rgb(255, 255, 255, 0.87);
+    padding: 5px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    font-size: 10px;
+}

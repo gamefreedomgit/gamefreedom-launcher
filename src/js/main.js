@@ -113,7 +113,6 @@ function create_main_window()
           });
       });
 
-      global.mainWindow.maximize();
       global.mainWindow.show();
 
       let currentURL = global.mainWindow.webContents.getURL();
@@ -249,7 +248,7 @@ ipcMain.on('launchGame', function(event)
     //! CHECK FOR THE LATEST PATCH FOR THAT SPECIFIC SERVER/REALM
 
     global.mainWindow.webContents.send('setPlayButtonState', true);
-    global.mainWindow.webContents.send('setPlayButtonText', 'Game is being loaded');
+    global.mainWindow.webContents.send('setPlayButtonText', 'Running');
     global.mainWindow.webContents.send('setVerifyButtonState', true);
     global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-warning" aria-hidden="true"></i> Game is running');
 

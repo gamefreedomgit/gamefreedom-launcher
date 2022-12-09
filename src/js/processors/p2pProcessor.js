@@ -332,7 +332,7 @@ module.exports = {
                 {
                     global.update_buffer = true;
                     global.userSettings.needUpdate = true;
-                    global.mainWindow.webContents.send('setPlayButtonText', 'Download');
+                    global.mainWindow.webContents.send('setPlayButtonText', 'Install');
                     global.mainWindow.webContents.send('setPlayButtonState', false);
                     global.mainWindow.webContents.send('hideProgressBar', true);
                     global.mainWindow.webContents.send('setProgressText', "Gathering game data...");

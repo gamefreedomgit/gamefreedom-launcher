@@ -48,7 +48,7 @@ module.exports = {
                 return;
             }
 
-            if (!globals.initialized)
+            //if (!globals.initialized)
             {
                 global.userSettings = JSON.parse(settings);
                 global.mainWindow.webContents.send('setUserSettings', global.userSettings);

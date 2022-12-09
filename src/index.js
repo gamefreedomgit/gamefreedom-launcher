@@ -95,7 +95,7 @@ playButton.addEventListener('click', function(event)
     if (playButton.textContent != "Play")
     {
         downloadBar.hidden     = false;
-        playButton.textContent = "Please wait...";
+        playButton.textContent = "Running";
 
         progressBar.removeAttribute('hidden');
         ipcRenderer.send('beginDownload');
@@ -139,7 +139,7 @@ verifyButton.addEventListener('click', function()
     playButton.disabled    = true;
     verifyButton.disabled  = true;
     downloadBar.hidden     = false;
-    playButton.textContent = "Please wait...";
+    playButton.textContent = "Running";
 
     progressBar.removeAttribute('hidden');
     ipcRenderer.send('beginVerify');
