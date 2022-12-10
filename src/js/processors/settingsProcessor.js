@@ -24,7 +24,7 @@ function write_default(location)
         }
 
         global.userSettings = default_settings;
-        global.mainWindow.webContents.send('setUserSettings', default_settings);
+        global.mainWindow.webContents.send('setGameLocation', default_settings.gameLocation);
         global.mainWindow.webContents.send('showFirstTimeSetup');
     });
 }
@@ -51,7 +51,7 @@ module.exports = {
             //if (!globals.initialized)
             {
                 global.userSettings = JSON.parse(settings);
-                global.mainWindow.webContents.send('setUserSettings', global.userSettings);
+                global.mainWindow.webContents.send('setGameLocation', global.userSettings.gameLocation);
 
                 if (global.userSettings.gameLocation == "" || global.userSettings.gameLocation == undefined)
                     global.mainWindow.webContents.send('showFirstTimeSetup');

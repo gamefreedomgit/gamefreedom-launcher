@@ -151,6 +151,23 @@ module.exports = {
         }
     },
 
+    destroyAndClean: function()
+    {
+        if (global.p2pClient != undefined || global.p2pClient.destroyed != true)
+            global.p2pClient.destroy();
+
+        global.userSettings.gameDownloaded = false;
+        global.userSettings.needUpdate     = true;
+        require('./settingsProcessor.js').save(global.userData);
+
+        global.mainWindow.webContents.send('hideProgressBar', true);
+        global.mainWindow.webContents.send('setProgressText', "");
+        global.mainWindow.webContents.send('setPlayButtonState', false);
+        global.mainWindow.webContents.send('setPlayButtonText', 'Download');
+        global.mainWindow.webContents.send('setVerifyButtonState', false);
+        global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+    },
+
     initialize: function()
     {
         global.p2pClient = new WebTorrent();
@@ -241,13 +258,6 @@ module.exports = {
 
             progressInterval = setInterval(function()
             {
-                // check if p2pClient is still alive
-                if (global.p2pClient == undefined || global.p2pClient.destroyed == true)
-                {
-                    clearInterval(progressInterval);
-                    return;
-                }
-
                 var progress = getProgress(link);
                 var text = progress.remaining + " | " + progress.percent + " (" + progress.downloaded + " / " + progress.total + " )" + " - " + progress.downloadSpeed;
 

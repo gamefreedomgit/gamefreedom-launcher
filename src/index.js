@@ -1,7 +1,7 @@
-const { ipcRenderer, ipcMain, dialog } = require('electron');
-const open_file_explorer               = require('open-file-explorer');
-const app_data_path                    = require('appdata-path');
-const electronSquirrelStartup          = require('electron-squirrel-startup');
+const { ipcRenderer, ipcMain, dialog  } = require('electron');
+const open_file_explorer                = require('open-file-explorer');
+const app_data_path                     = require('appdata-path');
+const electronSquirrelStartup           = require('electron-squirrel-startup');
 
 const playButton                 = document.querySelector("#playButton");
 const verifyButton               = document.querySelector("#verifyButton");
@@ -25,6 +25,7 @@ const updateRestartButton        = document.querySelector('#updateRestartButton'
 //ipcRenderer.showErrorBox = function(title, content) {
 //    console.log(`${title}\n${content}`);
 //};
+
 
 var webview = document.querySelector('webview');
 if (webview)
@@ -69,20 +70,11 @@ ipcRenderer.on('setProgressBarPercent', function(event, percent)
         progressBar.value = percent;
 })
 
-ipcRenderer.on('setUserSettings', function(event, string)
-{
-    gameLocationText.value = string.gameLocation;
-    ipcRenderer.send("saveUserSettings", string);
-})
-
 ipcRenderer.on('setGameLocation', function(event, string)
 {
     console.log('Updating game location to: ' + string);
-
-    gameLocationText.value = string;
+    gameLocationText.value           = string;
     global.userSettings.gameLocation = string;
-
-    ipcRenderer.send("saveUserSettings", string);
 })
 
 ipcRenderer.on('hideProgressBar', function(event, bool)
@@ -105,7 +97,7 @@ playButton.addEventListener('click', function(event)
     }
     else
     {
-        ipcRenderer.send("launchGame");
+        ipcRenderer.send('launchGame');
     }
 })
 

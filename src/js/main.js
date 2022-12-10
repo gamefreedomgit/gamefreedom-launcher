@@ -147,8 +147,10 @@ app.on('refresh', function()
 {
     initiate();
     settings.load(global.userData);
-});
 
+    p2p.destroyAndClean();
+    p2p.initialize();
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -217,12 +219,6 @@ ipcMain.on('error_moving_files', function(event, inSettings)
   dialog.showMessageBox(null, options, (response) => {
     console.log(response);
   });
-});
-
-ipcMain.on('saveUserSettings', function(event, newSettings)
-{
-  global.userSettings = newSettings;
-  settings.save(app.getPath('userData'));
 });
 
 ipcMain.on('launchGame', function(event)
@@ -345,7 +341,7 @@ ipcMain.on('quit', function(event)
   {
     if (global.p2pClient.destroyed != true)
     {
-      global.p2pClient.destroy();
+      p2p.destroyAndClean();
     }
   }
 
@@ -371,29 +367,31 @@ ipcMain.on('selectDirectory', async function(event)
 
   if (global.updateInProgress == true)
   {
-    const error = {
-        type: 'error',
-        buttons: ['Okay'],
-        defaultId: 2,
-        title: 'Please wait',
-        message: "There's already a move in progress."
-      };
+    // Fix me later
+    // const error = {
+    //     type: 'error',
+    //     buttons: ['Okay'],
+    //     defaultId: 2,
+    //     title: 'Please wait',
+    //     message: "There's already a download in progress."
+    //   };
 
-      dialog.showErrorBox(error);
-      return;
+    //   dialog.showErrorBox(error);
+    return;
   }
 
   if (global.movingInProgress == true)
   {
-    const error = {
-      type: 'error',
-      buttons: ['Okay'],
-      defaultId: 2,
-      title: 'Please wait',
-      message: "There's already a move in progress."
-    };
+    // Fix me later
+    // const error = {
+    //   type: 'error',
+    //   buttons: ['Okay'],
+    //   defaultId: 2,
+    //   title: 'Please wait',
+    //   message: "There's already a move in progress."
+    // };
 
-    dialog.showErrorBox(error);
+    // dialog.showErrorBox(error);
     return;
   }
 
@@ -408,16 +406,19 @@ ipcMain.on('selectDirectory', async function(event)
     if (global.userSettings.gameDownloaded == false)
     {
         global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
-        global.mainWindow.webContents.send('setPlayButtonState', false);
-        global.mainWindow.webContents.send('setVerifyButtonState', true);
+        global.mainWindow.webContents.send('setVerifyButtonState', false);
+        global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+
+        global.userSettings.gameLocation = dir.filePaths[0];
+        settings.save(app.getPath('userData'));
         return;
     }
 
     try
     {
       global.movingInProgress = true;
-      global.mainWindow.webContents.send('setPlayButtonState', false);
-      global.mainWindow.webContents.send('setVerifyButtonState', false);
+      global.mainWindow.webContents.send('setPlayButtonState', true);
+      global.mainWindow.webContents.send('setVerifyButtonState', true);
 
       let previousDirectory = selectedFolder();
 
@@ -430,6 +431,9 @@ ipcMain.on('selectDirectory', async function(event)
             global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
             global.mainWindow.webContents.send('setPlayButtonState', false);
             global.mainWindow.webContents.send('setVerifyButtonState', false);
+
+            global.userSettings.gameLocation = dir.filePaths[0];
+            settings.save(app.getPath('userData'));
           }
 
           global.movingInProgress = false;
@@ -439,6 +443,9 @@ ipcMain.on('selectDirectory', async function(event)
         global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
         global.mainWindow.webContents.send('setPlayButtonState', false);
         global.mainWindow.webContents.send('setVerifyButtonState', false);
+
+        global.userSettings.gameLocation = dir.filePaths[0];
+        settings.save(app.getPath('userData'));
 
         fs.rmdir(previousDirectory, { recursive: true }, function(error)
         {
@@ -450,8 +457,8 @@ ipcMain.on('selectDirectory', async function(event)
     catch(err)
     {
       global.movingInProgress = false;
-      global.mainWindow.webContents.send('setPlayButtonState', true);
-      global.mainWindow.webContents.send('setVerifyButtonState', true);
+      global.mainWindow.webContents.send('setPlayButtonState', false);
+      global.mainWindow.webContents.send('setVerifyButtonState', false);
       log.error(err);
     }
   }
@@ -470,6 +477,8 @@ ipcMain.on('firstSelectDirectory', async function(event)
       global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
       global.mainWindow.webContents.send('closeFirstTimeSetup');
       p2p.initialize();
+      global.userSettings.gameLocation = dir.filePaths[0];
+      settings.save(app.getPath('userData'));
     }
     catch(err)
     {
