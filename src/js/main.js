@@ -175,17 +175,22 @@ app.on('browser-window-blur', function () {
 
 ipcMain.on('beginDownload', function(event)
 {
-  p2p.download(global.userSettings.gameLocation);
-  global.downloadOngoing = true;
-});
-
-ipcMain.on('beginVerify', function(event)
-{
-  p2p.download(global.userSettings.gameLocation);
+  global.updateInProgress        = true;
   global.userSettings.needUpdate = true;
   global.downloadOngoing         = true;
   global.update_buffer           = true;
   global.version_buffer          = 0;
+  p2p.download(selectedFolder());
+});
+
+ipcMain.on('beginVerify', function(event)
+{
+  global.updateInProgress        = true;
+  global.userSettings.needUpdate = true;
+  global.downloadOngoing         = true;
+  global.update_buffer           = true;
+  global.version_buffer          = 0;
+  p2p.download(selectedFolder());
 });
 
 ipcMain.on('messageBox', function(event, text)
@@ -229,22 +234,6 @@ ipcMain.on('launchGame', function(event)
 
     console.log(rootPath);
 
-    // Remove cache on client launch
-    {
-        let first_cache    = rootPath + "/Cache";
-        let second_cache   = rootPath + "/Data/Cache";
-
-        try
-        {
-            fs.rmSync(first_cache, { recursive: true });
-            fs.rmSync(second_cache, { recursive: true });
-        }
-        catch (error)
-        {
-            log.error(error);
-        }
-    }
-
     //! CHECK FOR THE LATEST PATCH FOR THAT SPECIFIC SERVER/REALM
 
     global.mainWindow.webContents.send('setPlayButtonState', true);
@@ -265,6 +254,23 @@ ipcMain.on('launchGame', function(event)
           global.mainWindow.webContents.send('setPlayButtonText', 'Play');
           global.mainWindow.webContents.send('setVerifyButtonState', false);
           global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+
+          // Remove cache on client close
+          if (!error)
+          {
+              let first_cache    = rootPath + "\\Cache";
+              let second_cache   = rootPath + "\\Data\\Cache";
+
+              try
+              {
+                  fs.rmSync(first_cache, { recursive: true });
+                  fs.rmSync(second_cache, { recursive: true });
+              }
+              catch (error)
+              {
+                log.error(error);
+              }
+          }
         });
 
         break;
@@ -276,6 +282,22 @@ ipcMain.on('launchGame', function(event)
           if (error)
             throw new Error(error);
 
+          // Remove cache on client close
+          if (!error)
+          {
+              let first_cache    = rootPath + "\\Cache";
+              let second_cache   = rootPath + "\\Data\\Cache";
+
+              try
+              {
+                  fs.rmSync(first_cache, { recursive: true });
+                  fs.rmSync(second_cache, { recursive: true });
+              }
+              catch (error)
+              {
+                log.error(error);
+              }
+          }
         });
 
         break;
@@ -347,6 +369,20 @@ ipcMain.on('selectDirectory', async function(event)
     properties: ['openDirectory']
   });
 
+  if (global.updateInProgress == true)
+  {
+    const error = {
+        type: 'error',
+        buttons: ['Okay'],
+        defaultId: 2,
+        title: 'Please wait',
+        message: "There's already a move in progress."
+      };
+
+      dialog.showErrorBox(error);
+      return;
+  }
+
   if (global.movingInProgress == true)
   {
     const error = {
@@ -363,7 +399,7 @@ ipcMain.on('selectDirectory', async function(event)
 
   if (dir && dir.filePaths.length > 0)
   {
-    if (global.userSettings.gameLocation == dir.filePaths[0])
+    if (selectedFolder() == dir.filePaths[0])
     {
         console.error('User tried to set game location to the same path, ignore it.');
         return;
@@ -372,8 +408,6 @@ ipcMain.on('selectDirectory', async function(event)
     if (global.userSettings.gameDownloaded == false)
     {
         global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
-        global.userSettings.gameLocation = dir.filePaths[0];
-        settings.save(app.getPath('userData'));
         global.mainWindow.webContents.send('setPlayButtonState', false);
         global.mainWindow.webContents.send('setVerifyButtonState', true);
         return;
@@ -381,11 +415,12 @@ ipcMain.on('selectDirectory', async function(event)
 
     try
     {
+      global.movingInProgress = true;
       global.mainWindow.webContents.send('setPlayButtonState', false);
       global.mainWindow.webContents.send('setVerifyButtonState', false);
-      global.movingInProgress = true;
 
-      let previousDirectory = global.userSettings.gameLocation;
+      let previousDirectory = selectedFolder();
+
       fs.copy(selectedFolder(), dir.filePaths[0], err =>
       {
         if (err)
@@ -393,8 +428,6 @@ ipcMain.on('selectDirectory', async function(event)
           if (err.code == 'ENOENT')
           {
             global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
-            global.userSettings.gameLocation = dir.filePaths[0];
-            settings.save(app.getPath('userData'));
             global.mainWindow.webContents.send('setPlayButtonState', false);
             global.mainWindow.webContents.send('setVerifyButtonState', false);
           }
@@ -404,11 +437,9 @@ ipcMain.on('selectDirectory', async function(event)
         }
 
         global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
-        global.userSettings.gameLocation = dir.filePaths[0];
-        settings.save(app.getPath('userData'));
         global.mainWindow.webContents.send('setPlayButtonState', false);
         global.mainWindow.webContents.send('setVerifyButtonState', false);
-        global.movingInProgress = false;
+
         fs.rmdir(previousDirectory, { recursive: true }, function(error)
         {
           if (error)
@@ -418,10 +449,10 @@ ipcMain.on('selectDirectory', async function(event)
     }
     catch(err)
     {
+      global.movingInProgress = false;
       global.mainWindow.webContents.send('setPlayButtonState', true);
       global.mainWindow.webContents.send('setVerifyButtonState', true);
       log.error(err);
-      global.movingInProgress = false;
     }
   }
 });
@@ -439,8 +470,6 @@ ipcMain.on('firstSelectDirectory', async function(event)
       global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
       global.mainWindow.webContents.send('closeFirstTimeSetup');
       p2p.initialize();
-      global.userSettings.gameLocation = dir.filePaths[0];
-      settings.save(app.getPath('userData'));
     }
     catch(err)
     {

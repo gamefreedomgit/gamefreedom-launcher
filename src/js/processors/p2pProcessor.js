@@ -98,7 +98,7 @@ function download_finished(link)
 
     require('./settingsProcessor.js').save(global.userData);
 
-    let game_folder = global.userSettings.gameLocation + '/' + global.userSettings.gameName;
+    let game_folder = global.userSettings.gameLocation + '\\' + global.userSettings.gameName;
 
     chmodr(game_folder, 0o777, function(error)
     {
@@ -222,18 +222,21 @@ module.exports = {
 
         global.p2pClient.add(torrent, { path: global.userSettings.gameLocation }, function(link)
         {
-            downloadOngoing = true;
+            downloadOngoing         = true;
+            global.updateInProgress = true;
 
             link.on('error', function(error)
             {
-                downloadOngoing = false;
+                downloadOngoing         = false;
+                global.updateInProgress = false;
                 log.error(error);
             });
 
             link.on('download', (bytes) =>
             {
-                global.version_buffer = globals.serverVersion;
-                downloadOngoing       = true;
+                global.version_buffer   = globals.serverVersion;
+                downloadOngoing         = true;
+                global.updateInProgress = true;
             });
 
             progressInterval = setInterval(function()
@@ -348,14 +351,14 @@ module.exports = {
                         global.p2pClient.torrents.forEach(torrent =>
                         {
                             if (torrent.path == global.userSettings.gameLocation)
-                                global.p2pClient.remove(torrent);
+                                global.p2pClient.remove(torrent, false);
                         });
 
                         //download = Buffer.from(global.cataServerBuffer, 'base64');
                         await this.download();
                     }
                 }
-                else if (global.userSettings.gameDownloaded == true)
+                else if (global.userSettings.gameDownloaded == true && global.userSettings.needUpdate == false && global.update_buffer == false)
                 {
                     global.mainWindow.webContents.send('setPlayButtonText', 'Play');
                     global.mainWindow.webContents.send('setPlayButtonState', false);

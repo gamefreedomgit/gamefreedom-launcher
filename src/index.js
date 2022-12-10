@@ -81,6 +81,8 @@ ipcRenderer.on('setGameLocation', function(event, string)
 
     gameLocationText.value = string;
     global.userSettings.gameLocation = string;
+
+    ipcRenderer.send("saveUserSettings", string);
 })
 
 ipcRenderer.on('hideProgressBar', function(event, bool)
