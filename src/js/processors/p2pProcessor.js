@@ -258,6 +258,13 @@ module.exports = {
 
             progressInterval = setInterval(function()
             {
+                // check if p2pClient is still alive
+                if (global.p2pClient == undefined || global.p2pClient.destroyed == true)
+                {
+                    clearInterval(progressInterval);
+                    return;
+                }
+
                 var progress = getProgress(link);
                 var text = progress.remaining + " | " + progress.percent + " (" + progress.downloaded + " / " + progress.total + " )" + " - " + progress.downloadSpeed;
 
