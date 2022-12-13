@@ -151,9 +151,11 @@ module.exports = {
                     });
                 }
 
+                 // touch the file so it exists
+                 fs.closeSync(fs.openSync(relativePath, 'w'));
+
                 //download the file
                 global.queuedDownloads.push({url: fileUrl, path: relativePath});
-                filesCompleted++;
             }
 
             let hash = crypto.createHash('md5'),
