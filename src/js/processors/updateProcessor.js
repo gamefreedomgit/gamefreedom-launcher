@@ -152,8 +152,8 @@ module.exports = {
                     });
                 }
 
-                // touch the file so it exists
-                fs.closeSync(fs.openSync(relativePath, 'w'));
+                 // touch the file so it exists
+                 fs.closeSync(fs.openSync(relativePath, 'w'));
 
                 //download the file
                 global.queuedDownloads.push({url: fileUrl, path: relativePath});
