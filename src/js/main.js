@@ -189,7 +189,7 @@ ipcMain.on('beginDownload', async function(event)
     global.version_buffer          = 0;
 
 
-    update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
+    update.checkMD5AndUpdate(selectedFolder(), globals.deusDownload).then(() => {
         settings.save(app.getPath('userData'));
     });
 
@@ -279,7 +279,7 @@ ipcMain.on('beginVerify', async function(event)
   //track progress
 
 
-  update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
+  update.checkMD5AndUpdate(selectedFolder(), globals.deusDownload).then(() => {
     settings.save(app.getPath('userData'));
   });
 
@@ -317,7 +317,7 @@ ipcMain.on('launchGame', function(event)
   try
   {
     let rootPath  = selectedFolder();
-    let exePath   = rootPath + '\\Whitemane.exe';
+    let exePath   = rootPath + '\\Deus.exe';
 
     console.log(rootPath);
 

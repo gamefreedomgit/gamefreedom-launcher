@@ -226,13 +226,13 @@ module.exports = {
         switch (global.userSettings.gameName)
         {
             case 'maelstrom':
-                torrent = globals.cataDownload;
+                torrent = globals.deusDownload;
                 break;
             case 'deus-classless':
                 torrent = globals.deusDownload;
                 break;
             default:
-                torrent = globals.cataDownload;
+                torrent = globals.deusDownload;
                 break;
         }
 
@@ -285,13 +285,13 @@ module.exports = {
         switch (global.userSettings.gameName)
         {
             case 'maelstrom':
-                torrent = globals.cataDownload;
+                torrent = globals.deusDownload;
                 break;
             case 'deus-classless':
                 torrent = globals.deusDownload;
                 break;
             default:
-                torrent = globals.cataDownload;
+                torrent = globals.deusDownload;
                 break;
         }
 

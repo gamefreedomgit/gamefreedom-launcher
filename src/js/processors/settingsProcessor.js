@@ -6,7 +6,7 @@ const log = require('./logProcessor.js');
 const ipcRenderer = require('electron').ipcRenderer;
 
 const default_settings = {
-    gameName: "maelstrom",
+    gameName: "deus-classless",
     gameLocation: "",
     gameDownloaded: false,
     needUpdate: false,
@@ -34,7 +34,7 @@ function write_default(location)
 module.exports = {
     load: async function(fileLocation)
     {
-        const location = await fileLocation + "/" + "whitemane.conf";
+        const location = await fileLocation + "/" + "Deus.conf";
 
         fs.readFile(location, function(error, settings)
         {
@@ -66,7 +66,7 @@ module.exports = {
 
     save: async function( fileLocation, callback )
     {
-        const location = await fileLocation + "/" + "whitemane.conf";
+        const location = await fileLocation + "/" + "Deus.conf";
 
         fs.writeFile(location, JSON.stringify(global.userSettings), function(error)
         {
