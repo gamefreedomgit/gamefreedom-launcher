@@ -6,6 +6,7 @@ const path = require('path');
 const {globals} = require('../globals.js');
 const Progress = require('node-fetch-progress');
 const settings = require('./settingsProcessor.js');
+const autoUpdater = require('electron-updater').autoUpdater;
 
 
 
@@ -70,6 +71,20 @@ module.exports = {
         {
             module.exports.checkForUpdates();
         }, 60000);
+
+        if (global.launcherUpdateFound == false)
+        {
+            autoUpdater.checkForUpdatesAndNotify().then((result) =>
+            {
+                if (result != null)
+                {
+                    if (compare.gt(result.version, global.appVersion))
+                    {
+                        global.launcherUpdateFound = true;
+                    }
+                }
+            });
+        }
 
         if (global.userSettings.gameDownloaded == true)
         {
