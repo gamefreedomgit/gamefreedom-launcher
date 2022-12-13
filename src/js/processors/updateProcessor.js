@@ -31,6 +31,7 @@ module.exports = {
                 if (response.data.repos[i].name == global.userSettings.gameName)
                 {
                     gameVersion = response.data.repos[i].version;
+                    globals.serverVersion = gameVersion;
                     break;
                 }
             }
@@ -43,7 +44,7 @@ module.exports = {
             }
             else
             {
-                global.mainWindow.webContents.send('setPlayButtonState', true);
+                global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('setPlayButtonText', 'Play');
                 global.userSettings.needUpdate = false;
             }
