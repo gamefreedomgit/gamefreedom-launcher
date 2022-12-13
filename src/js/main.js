@@ -198,14 +198,15 @@ ipcMain.on('beginDownload', async function(event)
     setInterval(() => {
         downloadInterval++;
 
-        if (global.ongoingDownloads.length < 10 && global.queuedDownloads.length > 0) {
-            for (let downloadNumber = 0; downloadNumber < global.queuedDownloads.length; downloadNumber++) {
-                const download = global.queuedDownloads[downloadNumber];
+        for (let downloadNumber = 0; downloadNumber < global.queuedDownloads.length; downloadNumber++) {
+            const download = global.queuedDownloads[downloadNumber];
 
-                if (download != null) {
-                    global.ongoingDownloads.push(global.queuedDownloads.shift());
-                    update.downloadFile(download.url, download.path);
-                }
+            if (download != null) {
+                global.ongoingDownloads.push(global.queuedDownloads.shift());
+                update.downloadFile(download.url, download.path);
+
+                // remove from queued downloads
+                global.queuedDownloads.splice(downloadNumber, 1);
             }
         }
 
