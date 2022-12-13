@@ -182,59 +182,68 @@ global.downloadProgresses = [];
 
 ipcMain.on('beginDownload', async function(event)
 {
-  global.updateInProgress        = true;
-  global.userSettings.needUpdate = true;
-  global.downloadOngoing         = true;
-  global.update_buffer           = true;
-  global.version_buffer          = 0;
+    global.updateInProgress        = true;
+    global.userSettings.needUpdate = true;
+    global.downloadOngoing         = true;
+    global.update_buffer           = true;
+    global.version_buffer          = 0;
 
 
-  update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
-    settings.save(app.getPath('userData'));
-  });
+    update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
+        settings.save(app.getPath('userData'));
+    });
 
-  setInterval(() => {
-    if (global.ongoingDownloads.length < 5 && global.queuedDownloads.length > 0) {
-        const download = global.queuedDownloads.shift();
-        update.downloadFile(download.url, download.path);
-    }
 
-    // calculate overall progress
-    let overallDone = 0;
-    let overallTotal = 0;
-    let overallProgress = 0;
-    let overallRate = 0;
-    let overallEta = 0;
+    let downloadInterval = 0;
+    setInterval(() => {
+        downloadInterval++;
 
-    let count = 0;
-    for (const url in global.downloadProgresses) {
-        if (global.downloadProgresses[url] != null) {
-            overallDone += global.downloadProgresses[url].done;
-            overallTotal += global.downloadProgresses[url].total;
-            overallProgress += global.downloadProgresses[url].progress;
-            overallRate += global.downloadProgresses[url].rate;
-            overallEta += global.downloadProgresses[url].eta;
+        if (global.ongoingDownloads.length < 10 && global.queuedDownloads.length > 0) {
+            const download = global.queuedDownloads.shift();
+            update.downloadFile(download.url, download.path);
+        }
+
+        if (downloadInterval < 10)
+            return;
+
+        // calculate overall progress
+        let overallDone = 0;
+        let overallTotal = 0;
+        let overallProgress = 0;
+        let overallRate = 0;
+        let overallEta = 0;
+
+        for (const url in global.downloadProgresses) {
+            if (global.downloadProgresses[url] != null) {
+                overallDone += global.downloadProgresses[url].done;
+                overallTotal += global.downloadProgresses[url].total;
+                overallProgress += global.downloadProgresses[url].progress;
+                overallRate += global.downloadProgresses[url].rate;
+                overallEta += global.downloadProgresses[url].eta;
+            };
         };
-    };
 
-    // average everything out
-    let downloadProgressesLength = global.downloadProgresses.length + 1;
+        // average everything out
+        let downloadProgressesLength = global.downloadProgresses.length + 1;
 
-    overallTotal = overallTotal / downloadProgressesLength;
-    overallDone = overallDone / downloadProgressesLength;
-    overallProgress = overallProgress / downloadProgressesLength;
-    overallRate = overallRate / downloadProgressesLength;
-    overallEta = overallEta / downloadProgressesLength;
+        overallTotal = overallTotal / downloadProgressesLength;
+        overallDone = overallDone / downloadProgressesLength;
+        overallProgress = overallProgress / downloadProgressesLength;
+        overallRate = overallRate / downloadProgressesLength;
+        overallEta = overallEta / downloadProgressesLength;
 
-    if (global.ongoingDownloads.length != 0) {
-        // update progress bars
-        global.mainWindow.webContents.send('hideProgressBarCurrent', false);
-        global.mainWindow.webContents.send('setProgressBarCurrentPercent', overallProgress);
+        if (global.ongoingDownloads.length != 0 || global.queuedDownloads.length != 0) {
+            // update progress bars
+            global.mainWindow.webContents.send('hideProgressBarCurrent', false);
+            global.mainWindow.webContents.send('setProgressBarCurrentPercent', overallProgress);
 
-        const etaDate = addSeconds(new Date(), overallEta);
+            const etaDate = addSeconds(new Date(), overallEta);
 
-        global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate)}/s) ETA: ${distanceInWordsToNow(etaDate)}`);
-    } else {
+            global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate)}/s) ETA: ${distanceInWordsToNow(etaDate)}`);
+
+            return;
+        }
+
         // all downloads are done hide progress bars
         global.mainWindow.webContents.send('setProgressBarCurrentPercent', 0);
         global.mainWindow.webContents.send('setProgressTextCurrent', '');
@@ -250,8 +259,13 @@ ipcMain.on('beginDownload', async function(event)
         global.userSettings.clientVersion     = globals.serverVersion;
         global.userSettings.gameDownloaded    = true;
         global.userSettings.needUpdate        = false;
-    }
-  }, 1000);
+        global.userSettings.updateInProgress  = false;
+        global.userSettings.downloadOngoing   = false;
+
+        globals.updateInProgress = false;
+
+        settings.save(app.getPath('userData'));
+    }, 1000);
 });
 
 ipcMain.on('beginVerify', async function(event)

@@ -51,6 +51,7 @@ module.exports = {
             }
 
             global.userSettings = JSON.parse(settings);
+            global.userSettings.save = module.exports.save;
 
             if (global.userSettings.httpUpdate == undefined) // old config
             {

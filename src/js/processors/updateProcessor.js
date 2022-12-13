@@ -22,7 +22,19 @@ module.exports = {
         axios.get(globals.launcherInfo)
         .then(function(response)
         {
-            if (response.data.version > global.version_buffer)
+            // iterate response.data.repos for the selected game
+            let gameVersion = 0;
+
+            for (let i = 0; i < response.data.repos.length; i++)
+            {
+                if (response.data.repos[i].name == global.userSettings.gameName)
+                {
+                    gameVersion = response.data.repos[i].version;
+                    break;
+                }
+            }
+
+            if (gameVersion > global.version_buffer)
             {
                 global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('setPlayButtonText', 'Update');
@@ -64,8 +76,6 @@ module.exports = {
             this.checkForUpdates(function()
             {
                 globals.initialized = true;
-                global.mainWindow.webContents.send('setPlayButtonState', false);
-                global.mainWindow.webContents.send('setPlayButtonText', 'Play');
             });
         }
         else
@@ -79,30 +89,19 @@ module.exports = {
     },
 
     downloadFile: async function(url, path) {
-        // only download 5 files at a time
-        if (global.ongoingDownloads.length <= 5) {
-            global.ongoingDownloads.push({url: url, path: path});
-            const res = await fetch(url);
-            const progress = new Progress(res, { throttle: 100 })
-            progress.on('progress', (p) => {
-                downloadProgresses[url] = p;
-            });
+        global.ongoingDownloads.push({url: url, path: path});
+        const res = await fetch(url);
+        const progress = new Progress(res, { throttle: 100 })
+        progress.on('progress', (p) => {
+            downloadProgresses[url] = p;
+        });
 
-            const fileStream = fs.createWriteStream(path);
-            await new Promise((resolve, reject) => {
-                res.body.pipe(fileStream);
-                res.body.on("error", reject);
-                fileStream.on("finish", resolve);
-            });
-
-            // remove from ongoing downloads
-            global.ongoingDownloads = global.ongoingDownloads.filter((item) => item.url !== url);
-
-            // remove from downloadProgresses
-            //delete downloadProgresses[url];
-        } else {
-            global.queuedDownloads.push({url: url, path: path});
-        };
+        const fileStream = fs.createWriteStream(path);
+        await new Promise((resolve, reject) => {
+            res.body.pipe(fileStream);
+            res.body.on("error", reject);
+            fileStream.on("finish", resolve);
+        });
     },
 
     async checkMD5AndUpdate(localPath, jsonUrl) {
@@ -110,13 +109,15 @@ module.exports = {
         const response = await axios.get(jsonUrl);
         const filesData = response.data;
 
+
+        globals.updateInProgress = true;
         let filesCompleted = 1;
         // Iterate over the entries in the JSON file
         for (const entry of filesData) {
 
             // get key of json array value
             const filePath = Object.keys(entry)[0];
-            const fileUrl = `http://cdn-1.gamefreedom.org/${global.userSettings.gameName}}/${filePath}`;
+            const fileUrl = `http://cdn-1.gamefreedom.org/${global.userSettings.gameName}/${filePath}`;
 
             // get value of json array value
             const expectedHash = entry[filePath];
@@ -136,7 +137,7 @@ module.exports = {
                 }
 
                 //download the file
-                const file = await this.downloadFile(fileUrl, relativePath);
+                global.queuedDownloads.push({url: fileUrl, path: relativePath});
                 filesCompleted++;
             }
 
@@ -152,9 +153,7 @@ module.exports = {
                     console.log(`File ${filePath} is outdated, expected hash: ${expectedHash}, actual hash: ${actualHash}`);
 
                     // Download the updated file from the given URL
-                    const fileResponse = await module.exports.downloadFile(fileUrl, relativePath);
-
-                    console.log(`Updated file ${filePath}`);
+                    global.queuedDownloads.push({url: fileUrl, path: relativePath});
                 } else {
                     console.log(`File ${filePath} is up-to-date`);
                 }
@@ -166,6 +165,15 @@ module.exports = {
                 // update progress bar text
                 global.mainWindow.webContents.send('setProgressTextOverall', `Validating ${relativePath} ${percentCompleted}% (${filesCompleted}/${filesData.length})`);
                 filesCompleted++;
+
+                // all files have been validated hide progress bar
+                if (filesCompleted == filesData.length)
+                {
+                    global.mainWindow.webContents.send('setProgressBarOverallPercent', 0);
+                    global.mainWindow.webContents.send('setProgressTextOverall', '');
+
+                    global.mainWindow.webContents.send('hideProgressBarOverall', true);
+                }
             });
         }
     }
