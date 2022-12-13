@@ -116,7 +116,7 @@ module.exports = {
 
             // get key of json array value
             const filePath = Object.keys(entry)[0];
-            const fileUrl = `http://cdn-1.gamefreedom.org/deus-classless/${filePath}`;
+            const fileUrl = `http://cdn-1.gamefreedom.org/${global.userSettings.gameName}}/${filePath}`;
 
             // get value of json array value
             const expectedHash = entry[filePath];
@@ -129,7 +129,11 @@ module.exports = {
                 //ensure directory exists if not create it
                 const dir = path.dirname(relativePath);
                 if (!fs.existsSync(dir))
-                    fs.mkdirSync(dir);
+                {
+                    fs.mkdirSync(dir, {
+                        recursive: true
+                    });
+                }
 
                 //download the file
                 const file = await this.downloadFile(fileUrl, relativePath);
@@ -162,22 +166,6 @@ module.exports = {
                 // update progress bar text
                 global.mainWindow.webContents.send('setProgressTextOverall', `Validating ${relativePath} ${percentCompleted}% (${filesCompleted}/${filesData.length})`);
                 filesCompleted++;
-
-                if (filesCompleted == filesData.length)
-                {
-                    global.mainWindow.webContents.send('setProgressBarOverallPercent', 0);
-                    global.mainWindow.webContents.send('setProgressTextOverall', '');
-                    global.mainWindow.webContents.send('hideProgressBarOverall', true);
-
-                    global.mainWindow.webContents.send('hideProgressBarCurrent', true);
-
-                    global.mainWindow.webContents.send('setPlayButtonState', false);
-                    global.mainWindow.webContents.send('setPlayButtonText', 'Play');
-
-                    global.userSettings.clientVersion     = globals.serverVersion;
-                    global.userSettings.gameDownloaded    = true;
-                    global.userSettings.needUpdate        = false;
-                }
             });
         }
     }

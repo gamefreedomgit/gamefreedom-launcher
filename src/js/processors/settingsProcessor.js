@@ -50,22 +50,16 @@ module.exports = {
                 return;
             }
 
-            if (settings.httpUpdate == undefined) // old config
+            global.userSettings = JSON.parse(settings);
+
+            if (global.userSettings.httpUpdate == undefined) // old config
             {
                 write_default(location);
                 return;
             }
 
-            //if (!globals.initialized)
-            {
-                global.userSettings = JSON.parse(settings);
-                global.mainWindow.webContents.send('setGameLocation', global.userSettings.gameLocation);
-
-                if (global.userSettings.gameLocation == "" || global.userSettings.gameLocation == undefined)
-                    global.mainWindow.webContents.send('showFirstTimeSetup');
-
-                update.initialize();
-            }
+            global.mainWindow.webContents.send('setGameLocation', global.userSettings.gameLocation);
+            update.initialize();
         })
     },
 

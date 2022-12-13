@@ -233,7 +233,7 @@ ipcMain.on('beginDownload', async function(event)
 
         const etaDate = addSeconds(new Date(), overallEta);
 
-        global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate)} KB/s) ETA: ${distanceInWordsToNow(etaDate)}`);
+        global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate)}/s) ETA: ${distanceInWordsToNow(etaDate)}`);
     } else {
         // all downloads are done hide progress bars
         global.mainWindow.webContents.send('setProgressBarCurrentPercent', 0);
@@ -243,6 +243,13 @@ ipcMain.on('beginDownload', async function(event)
         global.mainWindow.webContents.send('setProgressBarOverallPercent', 0);
         global.mainWindow.webContents.send('setProgressTextOverall', '');
         global.mainWindow.webContents.send('hideProgressBarOverall', true);
+
+        global.mainWindow.webContents.send('setPlayButtonState', false);
+        global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+
+        global.userSettings.clientVersion     = globals.serverVersion;
+        global.userSettings.gameDownloaded    = true;
+        global.userSettings.needUpdate        = false;
     }
   }, 1000);
 });
