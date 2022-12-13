@@ -3,8 +3,8 @@ const { autoUpdater }                 = require('electron-updater');
 const log                             = require('../js/processors/logProcessor')
 const settings                        = require('../js/processors/settingsProcessor')
 const path                            = require('path');
-const globals                         = require('../js/globals.js');
-const p2p                             = require('./processors/p2pProcessor');
+const {globals}                         = require('../js/globals.js');
+const update                          = require('./processors/updateProcessor');
 const files                           = require('./utils/fileManager.js');
 const child                           = require('child_process').execFile;
 const fs                              = require('fs-extra')
@@ -13,6 +13,10 @@ const { exec }                        = require('child_process');
 const { execPath }                    = require('process');
 const { dir }                         = require('console');
 var Sudoer                            = require('electron-sudo').default;
+
+const distanceInWordsToNow = require('date-fns/formatDistanceToNow')
+const addSeconds = require('date-fns/addSeconds')
+const bytes = require('bytes')
 
 const env         = process.env.NODE_ENV || 'development';
 const get_runtime = new Date();
@@ -147,9 +151,6 @@ app.on('refresh', function()
 {
     initiate();
     settings.load(global.userData);
-
-    p2p.destroyAndClean();
-    p2p.initialize();
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -175,24 +176,93 @@ app.on('browser-window-blur', function () {
     globalShortcut.unregister('F5');
 });
 
-ipcMain.on('beginDownload', function(event)
+global.queuedDownloads = [];
+global.ongoingDownloads = [];
+global.downloadProgresses = [];
+
+ipcMain.on('beginDownload', async function(event)
 {
   global.updateInProgress        = true;
   global.userSettings.needUpdate = true;
   global.downloadOngoing         = true;
   global.update_buffer           = true;
   global.version_buffer          = 0;
-  p2p.download(selectedFolder());
+
+
+  update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
+    settings.save(app.getPath('userData'));
+  });
+
+  setInterval(() => {
+    if (global.ongoingDownloads.length < 5 && global.queuedDownloads.length > 0) {
+        const download = global.queuedDownloads.shift();
+        update.downloadFile(download.url, download.path);
+    }
+
+    // calculate overall progress
+    let overallDone = 0;
+    let overallTotal = 0;
+    let overallProgress = 0;
+    let overallRate = 0;
+    let overallEta = 0;
+
+    let count = 0;
+    for (const url in global.downloadProgresses) {
+        if (global.downloadProgresses[url] != null) {
+            overallDone += global.downloadProgresses[url].done;
+            overallTotal += global.downloadProgresses[url].total;
+            overallProgress += global.downloadProgresses[url].progress;
+            overallRate += global.downloadProgresses[url].rate;
+            overallEta += global.downloadProgresses[url].eta;
+        };
+    };
+
+    // average everything out
+    let downloadProgressesLength = global.downloadProgresses.length + 1;
+
+    overallTotal = overallTotal / downloadProgressesLength;
+    overallDone = overallDone / downloadProgressesLength;
+    overallProgress = overallProgress / downloadProgressesLength;
+    overallRate = overallRate / downloadProgressesLength;
+    overallEta = overallEta / downloadProgressesLength;
+
+    if (global.ongoingDownloads.length != 0) {
+        // update progress bars
+        global.mainWindow.webContents.send('hideProgressBarCurrent', false);
+        global.mainWindow.webContents.send('setProgressBarCurrentPercent', overallProgress);
+
+        const etaDate = addSeconds(new Date(), overallEta);
+
+        global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate)} KB/s) ETA: ${distanceInWordsToNow(etaDate)}`);
+    } else {
+        // all downloads are done hide progress bars
+        global.mainWindow.webContents.send('setProgressBarCurrentPercent', 0);
+        global.mainWindow.webContents.send('setProgressTextCurrent', '');
+        global.mainWindow.webContents.send('hideProgressBarCurrent', true);
+
+        global.mainWindow.webContents.send('setProgressBarOverallPercent', 0);
+        global.mainWindow.webContents.send('setProgressTextOverall', '');
+        global.mainWindow.webContents.send('hideProgressBarOverall', true);
+    }
+  }, 1000);
 });
 
-ipcMain.on('beginVerify', function(event)
+ipcMain.on('beginVerify', async function(event)
 {
   global.updateInProgress        = true;
   global.userSettings.needUpdate = true;
   global.downloadOngoing         = true;
   global.update_buffer           = true;
   global.version_buffer          = 0;
-  p2p.download(selectedFolder());
+
+  //track progress
+
+
+  update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
+    settings.save(app.getPath('userData'));
+  });
+
+  setInterval(update.trackProgress(), 1000);
 });
 
 ipcMain.on('messageBox', function(event, text)
@@ -225,7 +295,7 @@ ipcMain.on('launchGame', function(event)
 {
   try
   {
-    let rootPath  = selectedFolder() + '\\' + selectedGame();
+    let rootPath  = selectedFolder();
     let exePath   = rootPath + '\\Whitemane.exe';
 
     console.log(rootPath);
@@ -337,14 +407,7 @@ ipcMain.on('restart_app', function()
 
 ipcMain.on('quit', function(event)
 {
-  if (global.p2pClient != undefined)
-  {
-    if (global.p2pClient.destroyed != true)
-    {
-      p2p.destroyAndClean();
-    }
-  }
-
+  settings.save(app.getPath('userData'));
   app.quit();
 })
 
@@ -476,9 +539,11 @@ ipcMain.on('firstSelectDirectory', async function(event)
     {
       global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
       global.mainWindow.webContents.send('closeFirstTimeSetup');
-      p2p.initialize();
       global.userSettings.gameLocation = dir.filePaths[0];
       settings.save(app.getPath('userData'));
+
+      // enable button
+      global.mainWindow.webContents.send('setPlayButtonState', false);
     }
     catch(err)
     {

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const globals = require( '../globals.js' ).globals;
 const p2p = require('./p2pProcessor.js');
+const update = require('./updateProcessor.js');
 const log = require('./logProcessor.js');
 const ipcRenderer = require('electron').ipcRenderer;
 
@@ -9,6 +10,7 @@ const default_settings = {
     gameLocation: "",
     gameDownloaded: false,
     needUpdate: false,
+    httpUpdate: true,
     clientVersion: 0,
 }
 
@@ -48,6 +50,12 @@ module.exports = {
                 return;
             }
 
+            if (settings.httpUpdate == undefined) // old config
+            {
+                write_default(location);
+                return;
+            }
+
             //if (!globals.initialized)
             {
                 global.userSettings = JSON.parse(settings);
@@ -56,7 +64,7 @@ module.exports = {
                 if (global.userSettings.gameLocation == "" || global.userSettings.gameLocation == undefined)
                     global.mainWindow.webContents.send('showFirstTimeSetup');
 
-                p2p.initialize();
+                update.initialize();
             }
         })
     },

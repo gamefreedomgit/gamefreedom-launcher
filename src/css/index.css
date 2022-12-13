@@ -38,13 +38,15 @@ header {
 
 .part1 { grid-area: part1; }
 .part2 { grid-area: part2; }
+.part3 { grid-area: part3; }
 
 body > footer {
   position: absolute;
   display: grid;
   grid-gap: 10px;
   grid-template-areas: 'part1'
-                       'part2';
+                       'part2'
+                       'part3';
   grid-template-columns: max-content;
   bottom: 0;
   background: #00000000;
@@ -54,7 +56,7 @@ body > footer {
 }
 
 body > footer .part1,
-body > footer .part2 {
+body > footer .part2, .part3 {
   width: 100%;
 }
 

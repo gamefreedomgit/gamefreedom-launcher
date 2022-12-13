@@ -170,7 +170,6 @@ module.exports = {
 
     initialize: function()
     {
-        global.p2pClient = new WebTorrent();
         downloadOngoing  = false;
 
         global.version_buffer = global.userSettings.clientVersion;

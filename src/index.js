@@ -6,8 +6,10 @@ const electronSquirrelStartup           = require('electron-squirrel-startup');
 const playButton                 = document.querySelector("#playButton");
 const verifyButton               = document.querySelector("#verifyButton");
 const dropdownOptions            = document.querySelectorAll('.dropup-content a');
-const downloadBar                = document.querySelector(".download_progress");
-const progressBar                = document.querySelector(".progress-bar");
+const downloadBarCurrent         = document.querySelector(".download_progress_current");
+const downloadBarOverall         = document.querySelector(".download_progress_overall");
+const progressBarCurrent                = document.querySelector(".progress-bar-current");
+const progressBarOverall                = document.querySelector(".progress-bar-overall");
 const gameLocationText           = document.querySelector("#gameLocationText");
 const settings_modal             = document.querySelector("app-settings");
 const first_time_setup           = document.querySelector("app-install");
@@ -58,16 +60,28 @@ ipcRenderer.on('setPlayButtonText', function(event, string)
         playButton.textContent = string;
 })
 
-ipcRenderer.on('setProgressText', function(event, string)
+ipcRenderer.on('setProgressTextCurrent', function(event, string)
 {
-    if (progressBar)
-        progressBar.setAttribute("dataLabel", string);
+    if (progressBarCurrent)
+        progressBarCurrent.setAttribute("dataLabel", string);
 })
 
-ipcRenderer.on('setProgressBarPercent', function(event, percent)
+ipcRenderer.on('setProgressTextOverall', function(event, string)
+{
+    if (progressBarOverall)
+        progressBarOverall.setAttribute("dataLabel", string);
+})
+
+ipcRenderer.on('setProgressBarCurrentPercent', function(event, percent)
 {
     if (percent >= 0 && percent <= 100)
-        progressBar.value = percent;
+        progressBarCurrent.value = percent;
+})
+
+ipcRenderer.on('setProgressBarOverallPercent', function(event, percent)
+{
+    if (percent >= 0 && percent <= 100)
+        progressBarOverall.value = percent;
 })
 
 ipcRenderer.on('setGameLocation', function(event, string)
@@ -79,7 +93,8 @@ ipcRenderer.on('setGameLocation', function(event, string)
 
 ipcRenderer.on('hideProgressBar', function(event, bool)
 {
-    progressBar.hidden = bool;
+    progressBarCurrent.hidden = bool;
+    progressBarOverall.hidden = bool;
 })
 
 playButton.addEventListener('click', function(event)
@@ -88,10 +103,12 @@ playButton.addEventListener('click', function(event)
     console.log("Clicked on update/download button");
     if (playButton.textContent != "Play")
     {
-        downloadBar.hidden     = false;
+        downloadBarCurrent.hidden     = true;
+        downloadBarOverall.hidden     = false;
         playButton.textContent = "Running";
 
-        progressBar.removeAttribute('hidden');
+        progressBarCurrent.removeAttribute('hidden');
+        progressBarOverall.removeAttribute('hidden');
         ipcRenderer.send('beginDownload');
         console.log("Began download");
     }
@@ -104,6 +121,9 @@ playButton.addEventListener('click', function(event)
 firstDirectoryButton.addEventListener('click', function()
 {
     ipcRenderer.send('firstSelectDirectory');
+
+    // set button to download
+    playButton.textContent = "Download";
 })
 
 directoryButton.addEventListener('click', function()
@@ -132,10 +152,12 @@ verifyButton.addEventListener('click', function()
 {
     playButton.disabled    = true;
     verifyButton.disabled  = true;
-    downloadBar.hidden     = false;
+    downloadBarCurrent.hidden     = false;
+    downloadBarOverall.hidden     = false;
     playButton.textContent = "Running";
 
-    progressBar.removeAttribute('hidden');
+    progressBarCurrent.removeAttribute('hidden');
+    progressBarOverall.removeAttribute('hidden');
     ipcRenderer.send('beginVerify');
 })
 
@@ -255,6 +277,16 @@ ipcRenderer.on('update_downloaded', function()
     message.innerText = 'Update downloaded, and needs to be installed. Update?';
     updateRestartButton.removeAttribute('hidden');
     show_notification(true);
+});
+
+ipcRenderer.on('hideProgressBarCurrent', function(event, bool)
+{
+    downloadBarCurrent.hidden = bool;
+});
+
+ipcRenderer.on('hideProgressBarOverall', function(event, bool)
+{
+    downloadBarOverall.hidden = bool;
 });
 
 dropdownOptions.forEach(option => option.addEventListener('click', handleOptionSelected));

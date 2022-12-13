@@ -32,8 +32,11 @@
             <section class="part1 download-button-section">
                 <button class="button_play" disabled="true" id="playButton">Working...</button>
             </section>
-            <section class="part2 download_progress" hidden>
-                <progress class="progress-bar" value="0" max="100" dataLabel="Gathering resources..."></progress>
+            <section class="part2 download_progress_overall" hidden>
+                <progress class="progress-bar-overall" value="0" max="100" dataLabel="Gathering resources..."></progress>
+            </section>
+            <section class="part3 download_progress_current" hidden>
+                <progress class="progress-bar-current" value="0" max="100" dataLabel="Gathering resources..."></progress>
             </section>
         </footer>
         <app-settings>
