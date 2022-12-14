@@ -225,7 +225,7 @@ function startUpdateLoop()
 
                 const etaDate = addSeconds(new Date(), overallEta);
 
-                global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate)}/s) ETA: ${distanceInWordsToNow(etaDate)}`);
+                global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate, 'MB')}/s) ETA: ${distanceInWordsToNow(etaDate)}`);
             }
 
             if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0 && global.validatingFiles.length == 0)
