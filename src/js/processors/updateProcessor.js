@@ -8,7 +8,7 @@ const Progress    = require('node-fetch-progress');
 const settings    = require('./settingsProcessor.js');
 const autoUpdater = require('electron-updater').autoUpdater;
 const log         = require('./logProcessor');
-const os          = require('os');
+
 let queueLoop = null;
 
 module.exports = {
