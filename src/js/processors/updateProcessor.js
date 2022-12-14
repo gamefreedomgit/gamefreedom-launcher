@@ -1,13 +1,13 @@
-const fetch = require('node-fetch');
-const axios = require('axios');
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
-const {globals} = require('../globals.js');
-const Progress = require('node-fetch-progress');
-const settings = require('./settingsProcessor.js');
+const fetch       = require('node-fetch');
+const axios       = require('axios');
+const crypto      = require('crypto');
+const fs          = require('fs');
+const path        = require('path');
+const {globals}   = require('../globals.js');
+const Progress    = require('node-fetch-progress');
+const settings    = require('./settingsProcessor.js');
 const autoUpdater = require('electron-updater').autoUpdater;
-
+const log         = require('./logProcessor');
 
 
 let queueLoop = null;
