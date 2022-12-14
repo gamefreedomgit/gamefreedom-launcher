@@ -3,7 +3,7 @@ const axios       = require('axios');
 const crypto      = require('crypto');
 const fs          = require('fs');
 const path        = require('path');
-const {globals}   = require('../globals.js');
+const globals     = require('../globals.js').globals;
 const Progress    = require('node-fetch-progress');
 const settings    = require('./settingsProcessor.js');
 const autoUpdater = require('electron-updater').autoUpdater;
@@ -43,7 +43,7 @@ module.exports = {
 
                 global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Update required');
-                global.userSettings.needUpdate = true;
+                globals.needUpdate = true;
             }
             else
             {
@@ -52,7 +52,7 @@ module.exports = {
 
                 global.mainWindow.webContents.send('setVerifyButtonState', false);
                 global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
-                global.userSettings.needUpdate = false;
+                globals.needUpdate = false;
             }
 
             if (callback)
@@ -70,8 +70,6 @@ module.exports = {
 
     initialize: function()
     {
-        downloadOngoing  = false;
-
         global.version_buffer = global.userSettings.clientVersion;
 
         global.updateLoopId = setInterval(function()
@@ -81,7 +79,7 @@ module.exports = {
 
         global.launcherUpdateLoop = setInterval(function()
         {
-            if (global.launcherUpdateFound == false && global.updateInProgress == false)
+            if (globals.launcherUpdateFound == false && globals.updateInProgress == false)
             {
                 autoUpdater.checkForUpdatesAndNotify().then((result) =>
                 {
@@ -89,14 +87,14 @@ module.exports = {
                     {
                         if (compare.gt(result.version, global.appVersion))
                         {
-                            global.launcherUpdateFound = true;
+                            globals.launcherUpdateFound = true;
                         }
                     }
                 });
             }
         }, 60000);
 
-        if (global.userSettings.gameDownloaded == true)
+        if (globals.needUpdate == false)
         {
             this.checkForUpdates(function()
             {
@@ -173,8 +171,6 @@ module.exports = {
         const response = await axios.get(jsonUrl);
         const filesData = response.data;
 
-
-        globals.updateInProgress = true;
         let filesCompleted = 1;
         // Iterate over the entries in the JSON file
         for (const entry of filesData) {
@@ -182,7 +178,7 @@ module.exports = {
 
             // get key of json array value
             const filePath = Object.keys(entry)[0];
-            const fileUrl = `http://cdn-1.gamefreedom.org/${global.userSettings.gameName}/${filePath}`;
+            const fileUrl = `https://cdn-1.gamefreedom.org/${global.userSettings.gameName}/${filePath}`;
 
             // get value of json array value
             const expectedHash = entry[filePath];

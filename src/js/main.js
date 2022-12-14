@@ -50,11 +50,9 @@ function selectedGame()
 
 function initiate()
 {
-  global.launcherUpdateFound = false;
-  global.downloadOngoing     = false;
-
-  global.userData         = app.getPath('userData');
-  global.uploading        = false;}
+  global.userData             = app.getPath('userData');
+  globals.launcherUpdateFound = false;
+}
 
 function create_main_window()
 {
@@ -219,6 +217,8 @@ function startUpdateLoop()
 
             if (global.ongoingDownloads.length != 0 || global.queuedDownloads.length != 0)
             {
+                globals.updateInProgress = true;
+
                 // update progress bars
                 global.mainWindow.webContents.send('hideProgressBarCurrent', false);
                 global.mainWindow.webContents.send('setProgressBarCurrentPercent', overallProgress);
@@ -246,11 +246,8 @@ function startUpdateLoop()
                 global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
 
                 global.userSettings.clientVersion     = globals.serverVersion;
-                global.userSettings.gameDownloaded    = true;
-                global.userSettings.needUpdate        = false;
-                global.userSettings.updateInProgress  = false;
-                global.userSettings.downloadOngoing   = false;
 
+                globals.needUpdate       = false;
                 globals.updateInProgress = false;
 
                 settings.save(app.getPath('userData'));
@@ -263,10 +260,7 @@ function startUpdateLoop()
 
 ipcMain.on('beginDownload', async function(event)
 {
-    global.updateInProgress        = true;
-    global.userSettings.needUpdate = true;
-    global.downloadOngoing         = true;
-    global.update_buffer           = true;
+    globals.needUpdate             = true;
 
     update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
         settings.save(app.getPath('userData'));
@@ -277,12 +271,7 @@ ipcMain.on('beginDownload', async function(event)
 
 ipcMain.on('beginVerify', async function(event)
 {
-  global.updateInProgress        = true;
-  global.userSettings.needUpdate = true;
-  global.downloadOngoing         = true;
-  global.update_buffer           = true;
-  //track progress
-
+  globals.needUpdate             = true;
 
   update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
     settings.save(app.getPath('userData'));
@@ -348,10 +337,8 @@ ipcMain.on('launchGame', async function(event)
 
     if (!passedIntegrity)
     {
-        global.updateInProgress        = true;
-        global.userSettings.needUpdate = true;
-        global.downloadOngoing         = true;
-        global.update_buffer           = true;
+        globals.updateInProgress       = true;
+        globals.needUpdate             = true;
 
         global.mainWindow.webContents.send('hideProgressBarOverall', false);
         global.mainWindow.webContents.send('hideProgressBarCurrent', false);
@@ -475,7 +462,7 @@ ipcMain.on('launchGame', async function(event)
 autoUpdater.on('update-available', function()
 {
   global.mainWindow.webContents.send('update_available');
-  global.launcherUpdateFound = true;
+  globals.launcherUpdateFound = true;
 });
 
 autoUpdater.on('update-downloaded', function()
@@ -511,7 +498,7 @@ ipcMain.on('selectDirectory', async function(event)
     properties: ['openDirectory']
   });
 
-  if (global.updateInProgress == true)
+  if (globals.updateInProgress == true)
   {
     const warn = {
         type: 'warning',
