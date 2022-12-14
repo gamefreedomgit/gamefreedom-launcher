@@ -322,7 +322,7 @@ ipcMain.on('launchGame', async function(event)
 
     let filesToCheck = [
         'Whitemane.exe',
-        'Data\/wow-update-base-39665.MPQ'
+        'Data\\wow-update-base-39665.MPQ'
     ];
 
 
@@ -337,7 +337,7 @@ ipcMain.on('launchGame', async function(event)
             break;
         }
 
-        const md5Passed = await update.checkMD5(rootPath + '\/' + filesToCheck[i], globals.cataDownload);
+        const md5Passed = await update.checkMD5(rootPath + '\\' + filesToCheck[i], globals.cataDownload);
 
         if (!md5Passed)
         {

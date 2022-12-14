@@ -144,6 +144,9 @@ module.exports = {
 
             let relativePath = path.join(global.userSettings.gameLocation, filePath);
 
+            // make all \ into // for windows in relativePath
+            relativePath = relativePath.replace(/\\/g, '/');
+
             if (file == relativePath)
             {
                 const fileContent = fs.readFileSync(file);
