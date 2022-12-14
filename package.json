@@ -1,7 +1,7 @@
 {
   "name": "Whitemane",
   "productName": "Whitemane Launcher",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "WoW Launcher",
   "main": "src/js/main.js",
   "author": "Game Freedom",
