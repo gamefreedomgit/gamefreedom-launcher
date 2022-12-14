@@ -136,6 +136,11 @@ minimizeButton.addEventListener('click', function()
     ipcRenderer.send('minimize');
 })
 
+exitButton.addEventListener('click', function()
+{
+    ipcRenderer.send('quit');
+})
+
 verifyButton.addEventListener('click', function()
 {
     playButton.disabled    = true;
