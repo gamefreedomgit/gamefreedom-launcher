@@ -142,8 +142,9 @@ module.exports = {
 
             let relativePath = path.join(global.userSettings.gameLocation, filePath);
 
-            // make all \ into // for windows in relativePath
-            relativePath = relativePath.replace(/\\/g, '/');
+            // orient slashes in relativePath to match file
+            relativePath = relativePath.replace(/\//g, '\\');
+
 
             if (file == relativePath)
             {
