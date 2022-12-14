@@ -55,7 +55,6 @@ function initiate()
 
   global.userData         = app.getPath('userData');
   global.uploading        = false;
-  global.movingInProgress = false;
 }
 
 function create_main_window()
@@ -297,21 +296,6 @@ ipcMain.on('messageBox', function(event, text)
 
   dialog.showMessageBox(global.mainWindow, options);
 })
-
-ipcMain.on('error_moving_files', function(event, inSettings)
-{
-  const options = {
-    type: 'error',
-    buttons: ['Okay'],
-    defaultId: 2,
-    title: 'Question',
-    message: 'Please wait you are moving game files currently.'
-  };
-
-  dialog.showMessageBox(null, options, (response) => {
-    console.log(response);
-  });
-});
 
 ipcMain.on('launchGame', function(event)
 {
