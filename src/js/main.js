@@ -322,8 +322,6 @@ ipcMain.on('launchGame', async function(event)
         // Check if the file exists
         if(!fs.existsSync(rootPath + path.sep + filesToCheck[i]))
         {
-          log.error(rootPath + path.sep + filesToCheck[i]);
-          log.error("failed");
             passedIntegrity = false;
             break;
         }
@@ -332,8 +330,6 @@ ipcMain.on('launchGame', async function(event)
 
         if (!md5Passed)
         {
-          log.error(rootPath + path.sep + filesToCheck[i]);
-          log.error("failed md5");
             passedIntegrity = false;
             break;
         }
