@@ -81,7 +81,7 @@ module.exports = {
 
         global.launcherUpdateLoop = setInterval(function()
         {
-            if (global.launcherUpdateFound == false && global.updateInProgress == false)
+            if (global.launcherUpdateFound == true && global.updateInProgress == false)
             {
                 autoUpdater.checkForUpdatesAndNotify().then((result) =>
                 {
