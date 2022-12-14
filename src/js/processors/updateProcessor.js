@@ -79,19 +79,22 @@ module.exports = {
             module.exports.checkForUpdates();
         }, 60000);
 
-        if (global.launcherUpdateFound == false)
+        global.launcherUpdateLoop = setInterval(function()
         {
-            autoUpdater.checkForUpdatesAndNotify().then((result) =>
+            if (global.launcherUpdateFound == false && global.updateInProgress == false)
             {
-                if (result != null)
+                autoUpdater.checkForUpdatesAndNotify().then((result) =>
                 {
-                    if (compare.gt(result.version, global.appVersion))
+                    if (result != null)
                     {
-                        global.launcherUpdateFound = true;
+                        if (compare.gt(result.version, global.appVersion))
+                        {
+                            global.launcherUpdateFound = true;
+                        }
                     }
-                }
-            });
-        }
+                });
+            }
+        }, 60000);
 
         if (global.userSettings.gameDownloaded == true)
         {
