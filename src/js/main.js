@@ -170,6 +170,7 @@ app.on('browser-window-blur', function () {
 global.queuedDownloads = [];
 global.ongoingDownloads = [];
 global.downloadProgresses = [];
+global.validatingFiles = [];
 
 ipcMain.on('beginDownload', async function(event)
 {
@@ -238,7 +239,7 @@ ipcMain.on('beginDownload', async function(event)
             global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate)}/s) ETA: ${distanceInWordsToNow(etaDate)}`);
         }
 
-        if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0)
+        if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0 && global.validatingFiles.length == 0)
         {
             // all downloads are done hide progress bars
             global.mainWindow.webContents.send('setProgressBarCurrentPercent', 0);
