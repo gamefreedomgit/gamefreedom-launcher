@@ -1,6 +1,6 @@
 fs = require('fs');
 
-var logFile = "./launcher.log";
+var logFile = "launcher.log";
 
 const getDateString = () =>
 {
@@ -12,23 +12,17 @@ const getDateString = () =>
 }
 
 module.exports = {
-    write: function( data )
+    write: async function(data)
     {
         data = "[" + getDateString() + "] " + data;
 
-        try {
-            if(fs.existsAsync(logFile))
-            {
-                fs.appendFile(logFile, data + "\n", function ( err ) {
-                    if (err) throw err;
-                });
+        try
+        {
+            fs.appendFile(logFile, data + "\n", {flag:'a+'}, (err) => {
+                if (err) throw err;
+            });
 
-                console.log( data );
-            }
-            else
-            {
-                fs.writeFile('launcher.log', '', err => {throw new Error(err);})
-            }
+            console.log(data);
         }
         catch(e)
         {
@@ -37,19 +31,23 @@ module.exports = {
         }
     },
 
-    error: function( data )
+    error: async function(data)
     {
         data = "[" + getDateString() + "] " + data;
 
-        try {
-            fs.appendFile(logFile, data + "\n", function ( err ) {
-                if (err) throw err;
-            })
-            console.log( data );
-            console.trace('Stack Walk: ');
-        }catch(e)
+        try
         {
-            console.log( "[SERVER] ERROR: Unable to write data to log: " + e.stack || e );
+            fs.appendFile(logFile, data + "\n", {flag:'a+'}, (err) => {
+                if (err) throw err;
+            });
+
+            console.log(data);
+            console.trace('Stack Walk: ');
+        }
+        catch(e)
+        {
+            console.log( "ERROR: Unable to write data to log: " + e );
+            throw new Error(e);
         }
     }
 };

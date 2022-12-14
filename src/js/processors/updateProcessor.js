@@ -40,12 +40,18 @@ module.exports = {
             {
                 global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('setPlayButtonText', 'Update');
+
+                global.mainWindow.webContents.send('setPlayButtonState', false);
+                global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Update required');
                 global.userSettings.needUpdate = true;
             }
             else
             {
                 global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+
+                global.mainWindow.webContents.send('setVerifyButtonState', false);
+                global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
                 global.userSettings.needUpdate = false;
             }
 
