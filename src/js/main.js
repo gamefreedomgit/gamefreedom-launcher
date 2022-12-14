@@ -285,13 +285,13 @@ ipcMain.on('launchGame', async function(event)
   try
   {
     let rootPath  = selectedFolder();
-    let exePath   = rootPath + '\/Whitemane.exe';
+    let exePath   = rootPath + path.sep + 'Whitemane.exe';
 
     console.log(rootPath);
 
     // Remove cache on client launch
-    let first_cache    = rootPath + "\/Cache";
-    let second_cache   = rootPath + "\/Data\/Cache";
+    let first_cache    = rootPath + path.sep + "Cache";
+    let second_cache   = rootPath + path.sep + "Data" + path.sep + "Cache";
 
     try
     {
@@ -311,7 +311,7 @@ ipcMain.on('launchGame', async function(event)
 
     let filesToCheck = [
         'Whitemane.exe',
-        'Data\\wow-update-base-39665.MPQ'
+        "Data" + path.sep + "wow-update-base-39665.MPQ"
     ];
 
 
@@ -320,16 +320,20 @@ ipcMain.on('launchGame', async function(event)
     for (let i = 0; i < filesToCheck.length; i++)
     {
         // Check if the file exists
-        if(!fs.existsSync(rootPath + '\/' + filesToCheck[i]))
+        if(!fs.existsSync(rootPath + path.sep + filesToCheck[i]))
         {
+          log.error(rootPath + path.sep + filesToCheck[i]);
+          log.error("failed");
             passedIntegrity = false;
             break;
         }
 
-        const md5Passed = await update.checkMD5(rootPath + '\\' + filesToCheck[i], globals.cataDownload);
+        const md5Passed = await update.checkMD5(rootPath + path.sep + filesToCheck[i], globals.cataDownload);
 
         if (!md5Passed)
         {
+          log.error(rootPath + path.sep + filesToCheck[i]);
+          log.error("failed md5");
             passedIntegrity = false;
             break;
         }
@@ -354,7 +358,7 @@ ipcMain.on('launchGame', async function(event)
 
     // check config.wtf in ./WTF/Config.wtf for locale. Ensure it's enUS
 
-    let configWTF = rootPath + '\/WTF\/Config.wtf';
+    let configWTF = rootPath + path.sep + "WTF" + path.sep + "Config.wtf";
     if(fs.existsSync(configWTF))
     {
         let configWTFData = fs.readFileSync(configWTF, 'utf8');

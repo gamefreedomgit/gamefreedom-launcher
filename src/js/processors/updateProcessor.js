@@ -8,8 +8,7 @@ const Progress    = require('node-fetch-progress');
 const settings    = require('./settingsProcessor.js');
 const autoUpdater = require('electron-updater').autoUpdater;
 const log         = require('./logProcessor');
-
-
+const os          = require('os');
 let queueLoop = null;
 
 module.exports = {
@@ -135,10 +134,6 @@ module.exports = {
             const expectedHash = entry[filePath];
 
             let relativePath = path.join(global.userSettings.gameLocation, filePath);
-
-            // orient slashes in relativePath to match file
-            relativePath = relativePath.replace(/\//g, '\\');
-
 
             if (file == relativePath)
             {
