@@ -286,17 +286,6 @@ ipcMain.on('beginVerify', async function(event)
   setInterval(update.trackProgress(), 1000);
 });
 
-ipcMain.on('messageBox', function(event, text)
-{
-  var options = {
-    type: 'error',
-    title: 'Error!',
-    message: text
-  }
-
-  dialog.showMessageBox(global.mainWindow, options);
-})
-
 ipcMain.on('launchGame', function(event)
 {
   try
@@ -415,13 +404,13 @@ ipcMain.on('selectDirectory', async function(event)
 
   if (global.updateInProgress == true)
   {
-    const warning = {
-        type: 'warn',
+    const warn = {
+        type: 'warning',
         title: 'Please wait',
         message: "There's already a download in progress."
     };
 
-    dialog.showMessageBox(warning);
+    dialog.showMessageBox(warn);
     return;
   }
 
@@ -449,13 +438,13 @@ ipcMain.on('selectDirectory', async function(event)
   }
   else
   {
-    const warning = {
-        type: 'warn',
+    const warn = {
+        type: 'warning',
         title: 'Warning',
         message: "Something went wrong with choosing your new game path, please try again."
     };
 
-    dialog.showMessageBox(warning);
+    dialog.showMessageBox(warn);
   }
 });
 
@@ -486,12 +475,12 @@ ipcMain.on('firstSelectDirectory', async function(event)
   }
   else
   {
-    const warning = {
-        type: 'warn',
+    const warn = {
+        type: 'warning',
         title: 'Warning',
         message: "Something went wrong with choosing your game path, please try again."
     };
 
-    dialog.showMessageBox(warning);
+    dialog.showMessageBox(warn);
   }
 });
