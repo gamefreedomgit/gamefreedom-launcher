@@ -174,7 +174,7 @@ global.updateLoop = null;
 function startUpdateLoop()
 {
     let downloadInterval = 0;
-    if (global.updateLoop == null)
+    if (global.updateLoop == null || global.updateLoop._destroyed == true)
     {
         global.updateLoop = setInterval(() => {
             downloadInterval++;
