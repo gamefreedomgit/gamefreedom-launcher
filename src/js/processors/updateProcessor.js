@@ -18,8 +18,6 @@ module.exports = {
         if (globals.updateInProgress == true)
             return;
 
-        globals.updateInProgress = true;
-
         axios.get(globals.launcherInfo)
         .then(function(response)
         {
@@ -62,10 +60,6 @@ module.exports = {
         {
             log.error(error);
         })
-        .then(function()
-        {
-            globals.updateInProgress = false;
-        });
     },
 
     initialize: function()
