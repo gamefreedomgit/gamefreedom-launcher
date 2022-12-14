@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcRenderer, ipcMain, dialog, session, url, globalShortcut } = require('electron');
 const { autoUpdater }                 = require('electron-updater');
-const log                             = require('../js/processors/logProcessor');
+coconst log                             = require('../js/processors/logProcessor');
 const settings                        = require('../js/processors/settingsProcessor');
 const path                            = require('path');
 const {globals}                       = require('../js/globals.js');
@@ -54,8 +54,7 @@ function initiate()
   global.downloadOngoing     = false;
 
   global.userData         = app.getPath('userData');
-  global.uploading        = false;
-}
+  global.uploading        = false;}
 
 function create_main_window()
 {
@@ -170,6 +169,97 @@ global.queuedDownloads = [];
 global.ongoingDownloads = [];
 global.downloadProgresses = [];
 global.validatingFiles = [];
+global.updateLoop = null;
+
+function startUpdateLoop()
+{
+    let downloadInterval = 0;
+    if (global.updateLoop != null)
+    {
+        global.updateLoop = setInterval(() => {
+            downloadInterval++;
+
+            for (let downloadNumber = 0; downloadNumber < global.queuedDownloads.length; downloadNumber++) {
+                const download = global.queuedDownloads[downloadNumber];
+
+                if (download != null) {
+                    global.ongoingDownloads.push(global.queuedDownloads.shift());
+                    update.downloadFile(download.url, download.path);
+                }
+            }
+
+            if (downloadInterval < 10)
+                return;
+
+            // calculate overall progress
+            let overallDone = 0;
+            let overallTotal = 0;
+            let overallProgress = 0;
+            let overallRate = 0;
+            let overallEta = 0;
+
+            for (const url in global.downloadProgresses) {
+                if (global.downloadProgresses[url] != null) {
+                    overallDone += global.downloadProgresses[url].done;
+                    overallTotal += global.downloadProgresses[url].total;
+                    overallProgress += global.downloadProgresses[url].progress;
+                    overallRate += global.downloadProgresses[url].rate;
+                    overallEta += global.downloadProgresses[url].eta;
+                };
+            };
+
+            // average everything out
+            let downloadProgressesLength = global.downloadProgresses.length + 1;
+
+            overallTotal = overallTotal / downloadProgressesLength;
+            overallDone = overallDone / downloadProgressesLength;
+            overallProgress = overallProgress / downloadProgressesLength;
+            overallRate = overallRate / downloadProgressesLength;
+            overallEta = overallEta / downloadProgressesLength;
+
+            if (global.ongoingDownloads.length != 0 || global.queuedDownloads.length != 0)
+            {
+                // update progress bars
+                global.mainWindow.webContents.send('hideProgressBarCurrent', false);
+                global.mainWindow.webContents.send('setProgressBarCurrentPercent', overallProgress);
+
+                const etaDate = addSeconds(new Date(), overallEta);
+
+                global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate)}/s) ETA: ${distanceInWordsToNow(etaDate)}`);
+            }
+
+            if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0 && global.validatingFiles.length == 0)
+            {
+                // all downloads are done hide progress bars
+                global.mainWindow.webContents.send('setProgressBarCurrentPercent', 0);
+                global.mainWindow.webContents.send('setProgressTextCurrent', '');
+                global.mainWindow.webContents.send('hideProgressBarCurrent', true);
+
+                global.mainWindow.webContents.send('setProgressBarOverallPercent', 0);
+                global.mainWindow.webContents.send('setProgressTextOverall', '');
+                global.mainWindow.webContents.send('hideProgressBarOverall', true);
+
+                global.mainWindow.webContents.send('setPlayButtonState', false);
+                global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+
+                global.mainWindow.webContents.send('setVerifyButtonState', false);
+                global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+
+                global.userSettings.clientVersion     = globals.serverVersion;
+                global.userSettings.gameDownloaded    = true;
+                global.userSettings.needUpdate        = false;
+                global.userSettings.updateInProgress  = false;
+                global.userSettings.downloadOngoing   = false;
+
+                globals.updateInProgress = false;
+
+                settings.save(app.getPath('userData'));
+
+                clearInterval(global.updateLoop);
+            }
+        }, 1000);
+    }
+}
 
 ipcMain.on('beginDownload', async function(event)
 {
@@ -184,88 +274,7 @@ ipcMain.on('beginDownload', async function(event)
         settings.save(app.getPath('userData'));
     });
 
-
-    let downloadInterval = 0;
-    setInterval(() => {
-        downloadInterval++;
-
-        for (let downloadNumber = 0; downloadNumber < global.queuedDownloads.length; downloadNumber++) {
-            const download = global.queuedDownloads[downloadNumber];
-
-            if (download != null) {
-                global.ongoingDownloads.push(global.queuedDownloads.shift());
-                update.downloadFile(download.url, download.path);
-            }
-        }
-
-        if (downloadInterval < 10)
-            return;
-
-        // calculate overall progress
-        let overallDone = 0;
-        let overallTotal = 0;
-        let overallProgress = 0;
-        let overallRate = 0;
-        let overallEta = 0;
-
-        for (const url in global.downloadProgresses) {
-            if (global.downloadProgresses[url] != null) {
-                overallDone += global.downloadProgresses[url].done;
-                overallTotal += global.downloadProgresses[url].total;
-                overallProgress += global.downloadProgresses[url].progress;
-                overallRate += global.downloadProgresses[url].rate;
-                overallEta += global.downloadProgresses[url].eta;
-            };
-        };
-
-        // average everything out
-        let downloadProgressesLength = global.downloadProgresses.length + 1;
-
-        overallTotal = overallTotal / downloadProgressesLength;
-        overallDone = overallDone / downloadProgressesLength;
-        overallProgress = overallProgress / downloadProgressesLength;
-        overallRate = overallRate / downloadProgressesLength;
-        overallEta = overallEta / downloadProgressesLength;
-
-        if (global.ongoingDownloads.length != 0 || global.queuedDownloads.length != 0)
-        {
-            // update progress bars
-            global.mainWindow.webContents.send('hideProgressBarCurrent', false);
-            global.mainWindow.webContents.send('setProgressBarCurrentPercent', overallProgress);
-
-            const etaDate = addSeconds(new Date(), overallEta);
-
-            global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate)}/s) ETA: ${distanceInWordsToNow(etaDate)}`);
-        }
-
-        if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0 && global.validatingFiles.length == 0)
-        {
-            // all downloads are done hide progress bars
-            global.mainWindow.webContents.send('setProgressBarCurrentPercent', 0);
-            global.mainWindow.webContents.send('setProgressTextCurrent', '');
-            global.mainWindow.webContents.send('hideProgressBarCurrent', true);
-
-            global.mainWindow.webContents.send('setProgressBarOverallPercent', 0);
-            global.mainWindow.webContents.send('setProgressTextOverall', '');
-            global.mainWindow.webContents.send('hideProgressBarOverall', true);
-
-            global.mainWindow.webContents.send('setPlayButtonState', false);
-            global.mainWindow.webContents.send('setPlayButtonText', 'Play');
-
-            global.mainWindow.webContents.send('setVerifyButtonState', false);
-            global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
-
-            global.userSettings.clientVersion     = globals.serverVersion;
-            global.userSettings.gameDownloaded    = true;
-            global.userSettings.needUpdate        = false;
-            global.userSettings.updateInProgress  = false;
-            global.userSettings.downloadOngoing   = false;
-
-            globals.updateInProgress = false;
-
-            settings.save(app.getPath('userData'));
-        }
-    }, 1000);
+    startUpdateLoop();
 });
 
 ipcMain.on('beginVerify', async function(event)
@@ -283,7 +292,7 @@ ipcMain.on('beginVerify', async function(event)
     settings.save(app.getPath('userData'));
   });
 
-  setInterval(update.trackProgress(), 1000);
+  startUpdateLoop();
 });
 
 ipcMain.on('launchGame', function(event)
@@ -482,5 +491,4 @@ ipcMain.on('firstSelectDirectory', async function(event)
     };
 
     dialog.showMessageBox(warn);
-  }
-});
+
