@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcRenderer, ipcMain, dialog, session, url, globalShortcut } = require('electron');
 const { autoUpdater }                 = require('electron-updater');
-coconst log                             = require('../js/processors/logProcessor');
+const log                             = require('../js/processors/logProcessor');
 const settings                        = require('../js/processors/settingsProcessor');
 const path                            = require('path');
 const {globals}                       = require('../js/globals.js');
