@@ -491,4 +491,5 @@ ipcMain.on('firstSelectDirectory', async function(event)
     };
 
     dialog.showMessageBox(warn);
-
+  }
+});
