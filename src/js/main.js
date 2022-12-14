@@ -7,7 +7,7 @@ const {globals}                       = require('../js/globals.js');
 const update                          = require('./processors/updateProcessor');
 const files                           = require('./utils/fileManager.js');
 const child                           = require('child_process').execFile;
-const fs                              = require('fs-extra')
+const fs                              = require('fs-extra');
 const app_data_path                   = require('appdata-path');
 const { exec }                        = require('child_process');
 const { execPath }                    = require('process');
@@ -296,13 +296,13 @@ ipcMain.on('launchGame', async function(event)
   try
   {
     let rootPath  = selectedFolder();
-    let exePath   = rootPath + '\\Whitemane.exe';
+    let exePath   = rootPath + '\/Whitemane.exe';
 
     console.log(rootPath);
 
     // Remove cache on client launch
-    let first_cache    = rootPath + "\\Cache";
-    let second_cache   = rootPath + "\\Data\\Cache";
+    let first_cache    = rootPath + "\/Cache";
+    let second_cache   = rootPath + "\/Data\/Cache";
 
     try
     {
@@ -322,7 +322,7 @@ ipcMain.on('launchGame', async function(event)
 
     let filesToCheck = [
         'Whitemane.exe',
-        'Data\\wow-update-base-39665.MPQ'
+        'Data\/wow-update-base-39665.MPQ'
     ];
 
 
@@ -331,13 +331,13 @@ ipcMain.on('launchGame', async function(event)
     for (let i = 0; i < filesToCheck.length; i++)
     {
         // Check if the file exists
-        if(!fs.existsSync(rootPath + '\\' + filesToCheck[i]))
+        if(!fs.existsSync(rootPath + '\/' + filesToCheck[i]))
         {
             passedIntegrity = false;
             break;
         }
 
-        const md5Passed = await update.checkMD5(rootPath + '\\' + filesToCheck[i], globals.cataDownload);
+        const md5Passed = await update.checkMD5(rootPath + '\/' + filesToCheck[i], globals.cataDownload);
 
         if (!md5Passed)
         {
@@ -367,7 +367,7 @@ ipcMain.on('launchGame', async function(event)
 
     // check config.wtf in ./WTF/Config.wtf for locale. Ensure it's enUS
 
-    let configWTF = rootPath + '\\WTF\\Config.wtf';
+    let configWTF = rootPath + '\/WTF\/Config.wtf';
     if(fs.existsSync(configWTF))
     {
         let configWTFData = fs.readFileSync(configWTF, 'utf8');
@@ -442,6 +442,11 @@ ipcMain.on('launchGame', async function(event)
         {
           if (error)
             throw new Error(error);
+
+            global.mainWindow.webContents.send('setPlayButtonState', false);
+            global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+            global.mainWindow.webContents.send('setVerifyButtonState', false);
+            global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
         });
 
         break;
