@@ -330,6 +330,13 @@ ipcMain.on('launchGame', async function(event)
     // Check each file md5 hash to see if it's the correct version
     for (let i = 0; i < filesToCheck.length; i++)
     {
+        // Check if the file exists
+        if(!fs.existsSync(rootPath + '\\' + filesToCheck[i]))
+        {
+            passedIntegrity = false;
+            break;
+        }
+
         const md5Passed = await update.checkMD5(rootPath + '\\' + filesToCheck[i], globals.cataDownload);
 
         if (!md5Passed)
