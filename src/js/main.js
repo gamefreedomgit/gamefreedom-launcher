@@ -355,6 +355,7 @@ ipcMain.on('launchGame', async function(event)
 
         global.mainWindow.webContents.send('hideProgressBarOverall', false);
         global.mainWindow.webContents.send('hideProgressBarCurrent', false);
+        global.mainWindow.webContents.send('setPlayButtonText', 'Verifying');
 
         update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
             settings.save(app.getPath('userData'));
