@@ -105,7 +105,6 @@ module.exports = {
     },
 
     downloadFile: async function(url, path) {
-        global.ongoingDownloads.push({url: url, path: path});
         const res = await fetch(url);
         const progress = new Progress(res, { throttle: 100 })
         progress.on('progress', (p) => {
@@ -116,7 +115,11 @@ module.exports = {
         await new Promise((resolve, reject) => {
             res.body.pipe(fileStream);
             res.body.on("error", reject);
-            fileStream.on("finish", resolve);
+            fileStream.on("finish", () => {
+                global.ongoingDownloads.splice(global.ongoingDownloads.indexOf(url), 1);
+                fileStream.close();
+                resolve();
+            });
         });
     },
 
@@ -154,9 +157,6 @@ module.exports = {
 
                  // touch the file so it exists
                  fs.closeSync(fs.openSync(relativePath, 'w'));
-
-                //download the file
-                global.queuedDownloads.push({url: fileUrl, path: relativePath});
             }
 
             let hash = crypto.createHash('md5'),
