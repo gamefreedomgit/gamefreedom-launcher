@@ -267,8 +267,6 @@ ipcMain.on('beginDownload', async function(event)
     global.userSettings.needUpdate = true;
     global.downloadOngoing         = true;
     global.update_buffer           = true;
-    global.version_buffer          = 0;
-
 
     update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
         settings.save(app.getPath('userData'));
@@ -283,7 +281,6 @@ ipcMain.on('beginVerify', async function(event)
   global.userSettings.needUpdate = true;
   global.downloadOngoing         = true;
   global.update_buffer           = true;
-  global.version_buffer          = 0;
 
   //track progress
 
