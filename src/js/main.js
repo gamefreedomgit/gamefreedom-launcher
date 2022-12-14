@@ -267,8 +267,6 @@ ipcMain.on('beginDownload', async function(event)
     global.userSettings.needUpdate = true;
     global.downloadOngoing         = true;
     global.update_buffer           = true;
-    global.version_buffer          = 0;
-
 
     update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
         settings.save(app.getPath('userData'));
@@ -283,8 +281,6 @@ ipcMain.on('beginVerify', async function(event)
   global.userSettings.needUpdate = true;
   global.downloadOngoing         = true;
   global.update_buffer           = true;
-  global.version_buffer          = 0;
-
   //track progress
 
 
@@ -295,7 +291,7 @@ ipcMain.on('beginVerify', async function(event)
   startUpdateLoop();
 });
 
-ipcMain.on('launchGame', function(event)
+ipcMain.on('launchGame', async function(event)
 {
   try
   {
@@ -323,6 +319,43 @@ ipcMain.on('launchGame', function(event)
     global.mainWindow.webContents.send('setPlayButtonText', 'Running');
     global.mainWindow.webContents.send('setVerifyButtonState', true);
     global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-warning" aria-hidden="true"></i> Game is running');
+
+    let filesToCheck = [
+        'Whitemane.exe',
+        'Data\\wow-update-base-39665.MPQ'
+    ];
+
+
+    let passedIntegrity = true;
+    // Check each file md5 hash to see if it's the correct version
+    for (let i = 0; i < filesToCheck.length; i++)
+    {
+        const md5Passed = await update.checkMD5(rootPath + '\\' + filesToCheck[i], globals.cataDownload);
+
+        if (!md5Passed)
+        {
+            passedIntegrity = false;
+            break;
+        }
+    }
+
+    if (!passedIntegrity)
+    {
+        global.updateInProgress        = true;
+        global.userSettings.needUpdate = true;
+        global.downloadOngoing         = true;
+        global.update_buffer           = true;
+
+        global.mainWindow.webContents.send('hideProgressBarOverall', false);
+        global.mainWindow.webContents.send('hideProgressBarCurrent', false);
+
+        update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
+            settings.save(app.getPath('userData'));
+        });
+
+        startUpdateLoop();
+        return;
+    }
 
     switch (process.platform)
     {

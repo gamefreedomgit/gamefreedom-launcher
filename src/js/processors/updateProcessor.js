@@ -129,6 +129,39 @@ module.exports = {
         });
     },
 
+    async checkMD5(file, jsonURL)
+    {
+        const response = await axios.get(jsonURL);
+        const filesData = response.data;
+
+        for (const entry of filesData)
+        {
+            const filePath = Object.keys(entry)[0];
+            const expectedHash = entry[filePath];
+
+            let relativePath = path.join(global.userSettings.gameLocation, filePath);
+
+            if (file == relativePath)
+            {
+                const fileContent = fs.readFileSync(file);
+
+                const hash = crypto.createHash('md5');
+                hash.update(fileContent);
+
+                const md5 = hash.digest('hex');
+
+                if (md5 != expectedHash)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    },
+
     async checkMD5AndUpdate(localPath, jsonUrl) {
         // Fetch the JSON file from the given URL using Axios
         const response = await axios.get(jsonUrl);
