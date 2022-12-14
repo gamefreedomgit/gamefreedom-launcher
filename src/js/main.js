@@ -204,9 +204,6 @@ ipcMain.on('beginDownload', async function(event)
             if (download != null) {
                 global.ongoingDownloads.push(global.queuedDownloads.shift());
                 update.downloadFile(download.url, download.path);
-
-                // remove from queued downloads
-                global.queuedDownloads.splice(downloadNumber, 1);
             }
         }
 
@@ -247,31 +244,32 @@ ipcMain.on('beginDownload', async function(event)
             const etaDate = addSeconds(new Date(), overallEta);
 
             global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate)}/s) ETA: ${distanceInWordsToNow(etaDate)}`);
-
-            return;
         }
 
-        // all downloads are done hide progress bars
-        global.mainWindow.webContents.send('setProgressBarCurrentPercent', 0);
-        global.mainWindow.webContents.send('setProgressTextCurrent', '');
-        global.mainWindow.webContents.send('hideProgressBarCurrent', true);
+        if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0)
+        {
+            // all downloads are done hide progress bars
+            global.mainWindow.webContents.send('setProgressBarCurrentPercent', 0);
+            global.mainWindow.webContents.send('setProgressTextCurrent', '');
+            global.mainWindow.webContents.send('hideProgressBarCurrent', true);
 
-        global.mainWindow.webContents.send('setProgressBarOverallPercent', 0);
-        global.mainWindow.webContents.send('setProgressTextOverall', '');
-        global.mainWindow.webContents.send('hideProgressBarOverall', true);
+            global.mainWindow.webContents.send('setProgressBarOverallPercent', 0);
+            global.mainWindow.webContents.send('setProgressTextOverall', '');
+            global.mainWindow.webContents.send('hideProgressBarOverall', true);
 
-        global.mainWindow.webContents.send('setPlayButtonState', false);
-        global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+            global.mainWindow.webContents.send('setPlayButtonState', false);
+            global.mainWindow.webContents.send('setPlayButtonText', 'Play');
 
-        global.userSettings.clientVersion     = globals.serverVersion;
-        global.userSettings.gameDownloaded    = true;
-        global.userSettings.needUpdate        = false;
-        global.userSettings.updateInProgress  = false;
-        global.userSettings.downloadOngoing   = false;
+            global.userSettings.clientVersion     = globals.serverVersion;
+            global.userSettings.gameDownloaded    = true;
+            global.userSettings.needUpdate        = false;
+            global.userSettings.updateInProgress  = false;
+            global.userSettings.downloadOngoing   = false;
 
-        globals.updateInProgress = false;
+            globals.updateInProgress = false;
 
-        settings.save(app.getPath('userData'));
+            settings.save(app.getPath('userData'));
+        }
     }, 1000);
 });
 
