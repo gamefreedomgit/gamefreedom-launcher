@@ -365,6 +365,60 @@ ipcMain.on('launchGame', async function(event)
         return;
     }
 
+    // check config.wtf in ./WTF/Config.wtf for locale. Ensure it's enUS
+
+    let configWTF = rootPath + '\\WTF\\Config.wtf';
+    if(fs.existsSync(configWTF))
+    {
+        let configWTFData = fs.readFileSync(configWTF, 'utf8');
+
+        // find 'SET locale "enUS"'
+
+        let localeRegex = /SET locale "(.*)"/;
+        let localeMatch = configWTFData.match(localeRegex);
+
+        // find "set realmlist"
+        let realmlistRegex = /SET realmlist "(.*)"/;
+
+        let realmlistMatch = configWTFData.match(realmlistRegex);
+
+        // find "set patchlist"
+        let patchlistRegex = /SET patchlist "(.*)"/;
+        let patchlistMatch = configWTFData.match(patchlistRegex);
+        let configChanged = false;
+
+        if (localeMatch)
+        {
+            // set to enUS
+            if (localeMatch[1] !== 'enUS')
+            {
+                configWTFData = configWTFData.replace(localeRegex, 'SET locale "enUS"');
+                configChanged = true;
+            }
+        }
+
+        if (realmlistMatch)
+        {
+            if (realmlistMatch[1] !== 'logon.gamefreedom.org:3725')
+            {
+                configWTFData = configWTFData.replace(realmlistRegex, 'SET realmlist "logon.gamefreedom.org:3725"');
+                configChanged = true;
+            }
+        }
+
+        if (patchlistMatch)
+        {
+            if (patchlistMatch[1] !== '127.0.0.1')
+            {
+                configWTFData = configWTFData.replace(patchlistRegex, 'SET patchlist "127.0.0.1"');
+                configChanged = true;
+            }
+        }
+
+        if (configChanged)
+            fs.writeFileSync(configWTF, configWTFData);
+    }
+
     switch (process.platform)
     {
       case "win32":
