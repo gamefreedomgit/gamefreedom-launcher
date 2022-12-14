@@ -133,6 +133,7 @@ module.exports = {
         let filesCompleted = 1;
         // Iterate over the entries in the JSON file
         for (const entry of filesData) {
+            global.validatingFiles.push(entry);
 
             // get key of json array value
             const filePath = Object.keys(entry)[0];
@@ -184,14 +185,7 @@ module.exports = {
                 global.mainWindow.webContents.send('setProgressTextOverall', `Validating ${relativePath} ${percentCompleted}% (${filesCompleted}/${filesData.length})`);
                 filesCompleted++;
 
-                // all files have been validated hide progress bar
-                if (filesCompleted == filesData.length)
-                {
-                    global.mainWindow.webContents.send('setProgressBarOverallPercent', 0);
-                    global.mainWindow.webContents.send('setProgressTextOverall', '');
-
-                    global.mainWindow.webContents.send('hideProgressBarOverall', true);
-                }
+                global.validatingFiles.splice(global.validatingFiles.indexOf(entry), 1);
             });
         }
     }
