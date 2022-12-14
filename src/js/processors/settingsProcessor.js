@@ -1,6 +1,5 @@
 const fs = require('fs');
 const globals = require( '../globals.js' ).globals;
-const p2p = require('./p2pProcessor.js');
 const update = require('./updateProcessor.js');
 const log = require('./logProcessor.js');
 const ipcRenderer = require('electron').ipcRenderer;

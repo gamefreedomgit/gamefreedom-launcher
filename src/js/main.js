@@ -1,9 +1,9 @@
 const { app, BrowserWindow, ipcRenderer, ipcMain, dialog, session, url, globalShortcut } = require('electron');
 const { autoUpdater }                 = require('electron-updater');
-const log                             = require('../js/processors/logProcessor')
-const settings                        = require('../js/processors/settingsProcessor')
+const log                             = require('../js/processors/logProcessor');
+const settings                        = require('../js/processors/settingsProcessor');
 const path                            = require('path');
-const {globals}                         = require('../js/globals.js');
+const {globals}                       = require('../js/globals.js');
 const update                          = require('./processors/updateProcessor');
 const files                           = require('./utils/fileManager.js');
 const child                           = require('child_process').execFile;
@@ -21,18 +21,15 @@ const bytes = require('bytes')
 const env         = process.env.NODE_ENV || 'development';
 const get_runtime = new Date();
 
-
 // If development environment
-
 if (env === 'development') {
     try {
         require('electron-reloader')(module, {
             debug: true,
-            watchRenderer: true
+            watchRenderer: false,
         });
     } catch (_) { console.log('Error'); }
 }
-
 
 // Handle creating / removing shortcuts on windows when (un)installing
 if (require('electron-squirrel-startup')) // eslint-disable-line global-require
@@ -147,12 +144,6 @@ app.on('ready', function()
   }
 });
 
-app.on('refresh', function()
-{
-    initiate();
-    settings.load(global.userData);
-});
-
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
@@ -236,7 +227,8 @@ ipcMain.on('beginDownload', async function(event)
         overallRate = overallRate / downloadProgressesLength;
         overallEta = overallEta / downloadProgressesLength;
 
-        if (global.ongoingDownloads.length != 0 || global.queuedDownloads.length != 0) {
+        if (global.ongoingDownloads.length != 0 || global.queuedDownloads.length != 0)
+        {
             // update progress bars
             global.mainWindow.webContents.send('hideProgressBarCurrent', false);
             global.mainWindow.webContents.send('setProgressBarCurrentPercent', overallProgress);
@@ -259,6 +251,9 @@ ipcMain.on('beginDownload', async function(event)
 
             global.mainWindow.webContents.send('setPlayButtonState', false);
             global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+
+            global.mainWindow.webContents.send('setVerifyButtonState', false);
+            global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
 
             global.userSettings.clientVersion     = globals.serverVersion;
             global.userSettings.gameDownloaded    = true;
@@ -326,8 +321,21 @@ ipcMain.on('launchGame', function(event)
 
     console.log(rootPath);
 
-    //! CHECK FOR THE LATEST PATCH FOR THAT SPECIFIC SERVER/REALM
+    // Remove cache on client launch
+    let first_cache    = rootPath + "\\Cache";
+    let second_cache   = rootPath + "\\Data\\Cache";
 
+    try
+    {
+        fs.rmSync(first_cache,  { recursive: true });
+        fs.rmSync(second_cache, { recursive: true });
+    }
+    catch (error)
+    {
+      log.error(error);
+    }
+
+    //! CHECK FOR THE LATEST PATCH FOR THAT SPECIFIC SERVER/REALM
     global.mainWindow.webContents.send('setPlayButtonState', true);
     global.mainWindow.webContents.send('setPlayButtonText', 'Running');
     global.mainWindow.webContents.send('setVerifyButtonState', true);
@@ -346,23 +354,6 @@ ipcMain.on('launchGame', function(event)
           global.mainWindow.webContents.send('setPlayButtonText', 'Play');
           global.mainWindow.webContents.send('setVerifyButtonState', false);
           global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
-
-          // Remove cache on client close
-          if (!error)
-          {
-              let first_cache    = rootPath + "\\Cache";
-              let second_cache   = rootPath + "\\Data\\Cache";
-
-              try
-              {
-                  fs.rmSync(first_cache, { recursive: true });
-                  fs.rmSync(second_cache, { recursive: true });
-              }
-              catch (error)
-              {
-                log.error(error);
-              }
-          }
         });
 
         break;
@@ -373,23 +364,6 @@ ipcMain.on('launchGame', function(event)
         {
           if (error)
             throw new Error(error);
-
-          // Remove cache on client close
-          if (!error)
-          {
-              let first_cache    = rootPath + "\\Cache";
-              let second_cache   = rootPath + "\\Data\\Cache";
-
-              try
-              {
-                  fs.rmSync(first_cache, { recursive: true });
-                  fs.rmSync(second_cache, { recursive: true });
-              }
-              catch (error)
-              {
-                log.error(error);
-              }
-          }
         });
 
         break;
@@ -456,43 +430,25 @@ ipcMain.on('selectDirectory', async function(event)
 
   if (global.updateInProgress == true)
   {
-    // Fix me later
-    // const error = {
-    //     type: 'error',
-    //     buttons: ['Okay'],
-    //     defaultId: 2,
-    //     title: 'Please wait',
-    //     message: "There's already a download in progress."
-    //   };
+    const warning = {
+        type: 'warn',
+        title: 'Please wait',
+        message: "There's already a download in progress."
+    };
 
-    //   dialog.showErrorBox(error);
-    return;
-  }
-
-  if (global.movingInProgress == true)
-  {
-    // Fix me later
-    // const error = {
-    //   type: 'error',
-    //   buttons: ['Okay'],
-    //   defaultId: 2,
-    //   title: 'Please wait',
-    //   message: "There's already a move in progress."
-    // };
-
-    // dialog.showErrorBox(error);
+    dialog.showMessageBox(warning);
     return;
   }
 
   if (dir && dir.filePaths.length > 0)
   {
-    if (selectedFolder() == dir.filePaths[0])
+    if (dir.filePaths[0] == selectedFolder())
     {
-        console.error('User tried to set game location to the same path, ignore it.');
+        log.write('User tried to set game location to the same path, ignore it.');
         return;
     }
 
-    if (global.userSettings.gameDownloaded == false)
+    try
     {
         global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
         global.mainWindow.webContents.send('setVerifyButtonState', false);
@@ -500,56 +456,21 @@ ipcMain.on('selectDirectory', async function(event)
 
         global.userSettings.gameLocation = dir.filePaths[0];
         settings.save(app.getPath('userData'));
-        return;
-    }
-
-    try
-    {
-      global.movingInProgress = true;
-      global.mainWindow.webContents.send('setPlayButtonState', true);
-      global.mainWindow.webContents.send('setVerifyButtonState', true);
-
-      let previousDirectory = selectedFolder();
-
-      fs.copy(selectedFolder(), dir.filePaths[0], err =>
-      {
-        if (err)
-        {
-          if (err.code == 'ENOENT')
-          {
-            global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
-            global.mainWindow.webContents.send('setPlayButtonState', false);
-            global.mainWindow.webContents.send('setVerifyButtonState', false);
-
-            global.userSettings.gameLocation = dir.filePaths[0];
-            settings.save(app.getPath('userData'));
-          }
-
-          global.movingInProgress = false;
-          return log.error(err)
-        }
-
-        global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
-        global.mainWindow.webContents.send('setPlayButtonState', false);
-        global.mainWindow.webContents.send('setVerifyButtonState', false);
-
-        global.userSettings.gameLocation = dir.filePaths[0];
-        settings.save(app.getPath('userData'));
-
-        fs.rmdir(previousDirectory, { recursive: true }, function(error)
-        {
-          if (error)
-            log.error(error);
-        });
-      });
     }
     catch(err)
     {
-      global.movingInProgress = false;
-      global.mainWindow.webContents.send('setPlayButtonState', false);
-      global.mainWindow.webContents.send('setVerifyButtonState', false);
       log.error(err);
     }
+  }
+  else
+  {
+    const warning = {
+        type: 'warn',
+        title: 'Warning',
+        message: "Something went wrong with choosing your new game path, please try again."
+    };
+
+    dialog.showMessageBox(warning);
   }
 });
 
@@ -565,15 +486,27 @@ ipcMain.on('firstSelectDirectory', async function(event)
     {
       global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
       global.mainWindow.webContents.send('closeFirstTimeSetup');
+
       global.userSettings.gameLocation = dir.filePaths[0];
       settings.save(app.getPath('userData'));
 
-      // enable button
       global.mainWindow.webContents.send('setPlayButtonState', false);
+      global.mainWindow.webContents.send('setVerifyButtonState', false);
+      global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
     }
     catch(err)
     {
       log.error(err);
     }
+  }
+  else
+  {
+    const warning = {
+        type: 'warn',
+        title: 'Warning',
+        message: "Something went wrong with choosing your game path, please try again."
+    };
+
+    dialog.showMessageBox(warning);
   }
 });

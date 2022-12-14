@@ -8,8 +8,8 @@ const verifyButton               = document.querySelector("#verifyButton");
 const dropdownOptions            = document.querySelectorAll('.dropup-content a');
 const downloadBarCurrent         = document.querySelector(".download_progress_current");
 const downloadBarOverall         = document.querySelector(".download_progress_overall");
-const progressBarCurrent                = document.querySelector(".progress-bar-current");
-const progressBarOverall                = document.querySelector(".progress-bar-overall");
+const progressBarCurrent         = document.querySelector(".progress-bar-current");
+const progressBarOverall         = document.querySelector(".progress-bar-overall");
 const gameLocationText           = document.querySelector("#gameLocationText");
 const settings_modal             = document.querySelector("app-settings");
 const first_time_setup           = document.querySelector("app-install");
@@ -34,7 +34,7 @@ if (webview)
 {
     webview.addEventListener('dom-ready', function()
     {
-        webview.insertCSS('app-navigation { padding-top: 35px; }');
+        webview.insertCSS('app-navigation { padding-top: 35px; }')
     });
 }
 

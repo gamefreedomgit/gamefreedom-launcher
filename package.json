@@ -1,7 +1,7 @@
 {
   "name": "Deus",
   "productName": "Deus Launcher",
-  "version": "1.5.7",
+  "version": "1.5.8",
   "description": "WoW Launcher",
   "main": "src/js/main.js",
   "scripts": {
