@@ -402,10 +402,21 @@ ipcMain.on('launchGame', async function(event)
         exec(`set __COMPAT_LAYER=WIN7RTM && "${ exePath }"`, function(error, data)
         {
           if (error)
-            throw new Error(error);
+          {
+            const warn = {
+                type: 'warning',
+                title: 'Integrity Failed',
+                message: "Please verify integrity of your game files in launcher settings."
+            };
 
-          global.mainWindow.webContents.send('setPlayButtonState', false);
-          global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+            dialog.showMessageBox(warn);
+          }
+          else
+          {
+            global.mainWindow.webContents.send('setPlayButtonState', false);
+            global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+          }
+
           global.mainWindow.webContents.send('setVerifyButtonState', false);
           global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
         });
@@ -416,11 +427,22 @@ ipcMain.on('launchGame', async function(event)
       {
         exec(`WINEPREFIX="/home/$(whoami)/.config/GameFreedom/" WINEARCH=win64 wine "${ exePath }"`, function(error, data)
         {
-          if (error)
-            throw new Error(error);
+            if (error)
+            {
+              const warn = {
+                  type: 'warning',
+                  title: 'Integrity Failed',
+                  message: "Please verify integrity of your game files launcher settings."
+              };
 
-            global.mainWindow.webContents.send('setPlayButtonState', false);
-            global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+              dialog.showMessageBox(warn);
+            }
+            else
+            {
+              global.mainWindow.webContents.send('setPlayButtonState', false);
+              global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+            }
+
             global.mainWindow.webContents.send('setVerifyButtonState', false);
             global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
         });
