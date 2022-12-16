@@ -163,18 +163,19 @@ app.on('browser-window-blur', function () {
     globalShortcut.unregister('F5');
 });
 
-global.queuedDownloads = [];
-global.ongoingDownloads = [];
+global.queuedDownloads    = [];
+global.ongoingDownloads   = [];
 global.downloadProgresses = [];
-global.validatingFiles = [];
-global.updateLoop = null;
+global.validatingFiles    = [];
+global.updateLoop         = null;
 
 function startUpdateLoop()
 {
     let downloadInterval = 0;
     if (global.updateLoop == null || global.updateLoop._destroyed == true)
     {
-        global.updateLoop = setInterval(() => {
+        global.updateLoop = setInterval(() =>
+        {
             downloadInterval++;
 
             for (let downloadNumber = 0; downloadNumber < global.queuedDownloads.length; downloadNumber++) {
@@ -230,6 +231,11 @@ function startUpdateLoop()
 
             if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0 && global.validatingFiles.length == 0)
             {
+                globals.updateInProgress = false;
+
+                global.userSettings.clientVersion = globals.serverVersion;
+                settings.save(app.getPath('userData'));
+
                 // all downloads are done hide progress bars
                 global.mainWindow.webContents.send('setProgressBarCurrentPercent', 0);
                 global.mainWindow.webContents.send('setProgressTextCurrent', '');
@@ -245,13 +251,6 @@ function startUpdateLoop()
                 global.mainWindow.webContents.send('setVerifyButtonState', false);
                 global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
 
-                global.userSettings.clientVersion     = globals.serverVersion;
-
-                globals.needUpdate       = false;
-                globals.updateInProgress = false;
-
-                settings.save(app.getPath('userData'));
-
                 clearInterval(global.updateLoop);
             }
         }, 1000);
@@ -260,24 +259,18 @@ function startUpdateLoop()
 
 ipcMain.on('beginDownload', async function(event)
 {
-    globals.needUpdate             = true;
-
-    update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
-        settings.save(app.getPath('userData'));
+    update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() =>
+    {
+        startUpdateLoop();
     });
-
-    startUpdateLoop();
 });
 
 ipcMain.on('beginVerify', async function(event)
 {
-  globals.needUpdate             = true;
-
-  update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
-    settings.save(app.getPath('userData'));
-  });
-
-  startUpdateLoop();
+    update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() =>
+    {
+        startUpdateLoop();
+    });
 });
 
 ipcMain.on('launchGame', async function(event)
@@ -337,18 +330,14 @@ ipcMain.on('launchGame', async function(event)
 
     if (!passedIntegrity)
     {
-        globals.updateInProgress       = true;
-        globals.needUpdate             = true;
-
         global.mainWindow.webContents.send('hideProgressBarOverall', false);
         global.mainWindow.webContents.send('hideProgressBarCurrent', false);
         global.mainWindow.webContents.send('setPlayButtonText', 'Verifying');
 
         update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
-            settings.save(app.getPath('userData'));
+            startUpdateLoop();
         });
 
-        startUpdateLoop();
         return;
     }
 

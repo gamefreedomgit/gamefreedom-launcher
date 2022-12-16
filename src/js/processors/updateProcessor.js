@@ -33,23 +33,25 @@ module.exports = {
                 }
             }
 
-            if (gameVersion > global.version_buffer)
+            if (gameVersion != global.version_buffer)
             {
+                globals.needUpdate = true;
+
                 global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('setPlayButtonText', 'Update');
 
                 global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Update required');
-                globals.needUpdate = true;
             }
             else
             {
+                globals.needUpdate = false;
+
                 global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('setPlayButtonText', 'Play');
 
                 global.mainWindow.webContents.send('setVerifyButtonState', false);
                 global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
-                globals.needUpdate = false;
             }
 
             if (callback)
@@ -87,21 +89,16 @@ module.exports = {
             }
         }, 60000);
 
-        if (globals.needUpdate == false)
+        this.checkForUpdates(function()
         {
-            this.checkForUpdates(function()
-            {
-                globals.initialized = true;
-            });
-        }
-        else
-        {
-            this.checkForUpdates(function()
+            if (globals.needUpdate == true)
             {
                 global.mainWindow.webContents.send('setPlayButtonState', false);
-                global.mainWindow.webContents.send('setPlayButtonText', 'Download');
-            });
-        }
+                global.mainWindow.webContents.send('setPlayButtonText', 'Update Available');
+            }
+        });
+
+        globals.initialized = true;
     },
 
     downloadFile: async function(url, path) {
@@ -156,7 +153,10 @@ module.exports = {
         return false;
     },
 
-    async checkMD5AndUpdate(localPath, jsonUrl) {
+    async checkMD5AndUpdate(localPath, jsonUrl)
+    {
+        globals.updateInProgress = true;
+
         // Fetch the JSON file from the given URL using Axios
         const response = await axios.get(jsonUrl);
         const filesData = response.data;
