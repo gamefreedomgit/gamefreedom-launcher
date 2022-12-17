@@ -131,21 +131,14 @@ directoryButton.addEventListener('click', function()
     ipcRenderer.send('selectDirectory');
 })
 
-exitButton.addEventListener('click', function()
-{
-    if (global.movingInProgress != true)
-    {
-        ipcRenderer.send('quit');
-    }
-    else
-    {
-        ipcRenderer.send('error_moving_files');
-    }
-})
-
 minimizeButton.addEventListener('click', function()
 {
     ipcRenderer.send('minimize');
+})
+
+exitButton.addEventListener('click', function()
+{
+    ipcRenderer.send('quit');
 })
 
 verifyButton.addEventListener('click', function()

@@ -1,14 +1,12 @@
-const fs = require('fs');
-const globals = require( '../globals.js' ).globals;
-const update = require('./updateProcessor.js');
-const log = require('./logProcessor.js');
+const fs          = require('fs');
+const globals     = require( '../globals.js' ).globals;
+const update      = require('./updateProcessor.js');
+const log         = require('./logProcessor.js');
 const ipcRenderer = require('electron').ipcRenderer;
 
 const default_settings = {
     gameName: "deus-classless",
     gameLocation: "",
-    gameDownloaded: false,
-    needUpdate: false,
     httpUpdate: true,
     clientVersion: 0,
 }

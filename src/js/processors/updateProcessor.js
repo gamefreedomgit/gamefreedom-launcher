@@ -1,14 +1,13 @@
-const fetch = require('node-fetch');
-const axios = require('axios');
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
-const {globals} = require('../globals.js');
-const Progress = require('node-fetch-progress');
-const settings = require('./settingsProcessor.js');
+const fetch       = require('node-fetch');
+const axios       = require('axios');
+const crypto      = require('crypto');
+const fs          = require('fs');
+const path        = require('path');
+const globals     = require('../globals.js').globals;
+const Progress    = require('node-fetch-progress');
+const settings    = require('./settingsProcessor.js');
 const autoUpdater = require('electron-updater').autoUpdater;
-
-
+const log         = require('./logProcessor');
 
 let queueLoop = null;
 
@@ -17,8 +16,6 @@ module.exports = {
     {
         if (globals.updateInProgress == true)
             return;
-
-        globals.updateInProgress = true;
 
         axios.get(globals.launcherInfo)
         .then(function(response)
@@ -36,23 +33,25 @@ module.exports = {
                 }
             }
 
-            if (gameVersion > global.version_buffer)
+            if (gameVersion != global.version_buffer)
             {
+                globals.needUpdate = true;
+
                 global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('setPlayButtonText', 'Update');
 
                 global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Update required');
-                global.userSettings.needUpdate = true;
             }
             else
             {
+                globals.needUpdate = false;
+
                 global.mainWindow.webContents.send('setPlayButtonState', false);
                 global.mainWindow.webContents.send('setPlayButtonText', 'Play');
 
                 global.mainWindow.webContents.send('setVerifyButtonState', false);
                 global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
-                global.userSettings.needUpdate = false;
             }
 
             if (callback)
@@ -62,16 +61,10 @@ module.exports = {
         {
             log.error(error);
         })
-        .then(function()
-        {
-            globals.updateInProgress = false;
-        });
     },
 
     initialize: function()
     {
-        downloadOngoing  = false;
-
         global.version_buffer = global.userSettings.clientVersion;
 
         global.updateLoopId = setInterval(function()
@@ -79,35 +72,33 @@ module.exports = {
             module.exports.checkForUpdates();
         }, 60000);
 
-        if (global.launcherUpdateFound == false)
+        global.launcherUpdateLoop = setInterval(function()
         {
-            autoUpdater.checkForUpdatesAndNotify().then((result) =>
+            if (globals.launcherUpdateFound == false && globals.updateInProgress == false)
             {
-                if (result != null)
+                autoUpdater.checkForUpdatesAndNotify().then((result) =>
                 {
-                    if (compare.gt(result.version, global.appVersion))
+                    if (result != null)
                     {
-                        global.launcherUpdateFound = true;
+                        if (compare.gt(result.version, global.appVersion))
+                        {
+                            globals.launcherUpdateFound = true;
+                        }
                     }
-                }
-            });
-        }
+                });
+            }
+        }, 60000);
 
-        if (global.userSettings.gameDownloaded == true)
+        this.checkForUpdates(function()
         {
-            this.checkForUpdates(function()
-            {
-                globals.initialized = true;
-            });
-        }
-        else
-        {
-            this.checkForUpdates(function()
+            if (globals.needUpdate == true)
             {
                 global.mainWindow.webContents.send('setPlayButtonState', false);
-                global.mainWindow.webContents.send('setPlayButtonText', 'Download');
-            });
-        }
+                global.mainWindow.webContents.send('setPlayButtonText', 'Update Available');
+            }
+        });
+
+        globals.initialized = true;
     },
 
     downloadFile: async function(url, path) {
@@ -129,13 +120,47 @@ module.exports = {
         });
     },
 
-    async checkMD5AndUpdate(localPath, jsonUrl) {
+    async checkMD5(file, jsonURL)
+    {
+        const response = await axios.get(jsonURL);
+        const filesData = response.data;
+
+        for (const entry of filesData)
+        {
+            const filePath = Object.keys(entry)[0];
+            const expectedHash = entry[filePath];
+
+            let relativePath = path.join(global.userSettings.gameLocation, filePath);
+
+            if (file == relativePath)
+            {
+                const fileContent = fs.readFileSync(file);
+
+                const hash = crypto.createHash('md5');
+                hash.update(fileContent);
+
+                const md5 = hash.digest('hex');
+
+                if (md5 != expectedHash)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    },
+
+    async checkMD5AndUpdate(localPath, jsonUrl)
+    {
+        globals.updateInProgress = true;
+
         // Fetch the JSON file from the given URL using Axios
         const response = await axios.get(jsonUrl);
         const filesData = response.data;
 
-
-        globals.updateInProgress = true;
         let filesCompleted = 1;
         // Iterate over the entries in the JSON file
         for (const entry of filesData) {
@@ -143,7 +168,7 @@ module.exports = {
 
             // get key of json array value
             const filePath = Object.keys(entry)[0];
-            const fileUrl = `http://cdn-1.gamefreedom.org/${global.userSettings.gameName}/${filePath}`;
+            const fileUrl = `https://cdn-1.gamefreedom.org/${global.userSettings.gameName}/${filePath}`;
 
             // get value of json array value
             const expectedHash = entry[filePath];

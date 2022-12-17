@@ -1,9 +1,10 @@
 {
   "name": "Deus",
   "productName": "Deus Launcher",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "description": "WoW Launcher",
   "main": "src/js/main.js",
+  "author": "Game Freedom",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",

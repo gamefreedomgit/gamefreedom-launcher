@@ -7,7 +7,7 @@ const {globals}                       = require('../js/globals.js');
 const update                          = require('./processors/updateProcessor');
 const files                           = require('./utils/fileManager.js');
 const child                           = require('child_process').execFile;
-const fs                              = require('fs-extra')
+const fs                              = require('fs-extra');
 const app_data_path                   = require('appdata-path');
 const { exec }                        = require('child_process');
 const { execPath }                    = require('process');
@@ -50,12 +50,8 @@ function selectedGame()
 
 function initiate()
 {
-  global.launcherUpdateFound = false;
-  global.downloadOngoing     = false;
-
-  global.userData         = app.getPath('userData');
-  global.uploading        = false;
-  global.movingInProgress = false;
+  global.userData             = app.getPath('userData');
+  globals.launcherUpdateFound = false;
 }
 
 function create_main_window()
@@ -167,164 +163,128 @@ app.on('browser-window-blur', function () {
     globalShortcut.unregister('F5');
 });
 
-global.queuedDownloads = [];
-global.ongoingDownloads = [];
+global.queuedDownloads    = [];
+global.ongoingDownloads   = [];
 global.downloadProgresses = [];
-global.validatingFiles = [];
+global.validatingFiles    = [];
+global.updateLoop         = null;
+
+function startUpdateLoop()
+{
+    let downloadInterval = 0;
+    if (global.updateLoop == null || global.updateLoop._destroyed == true)
+    {
+        global.updateLoop = setInterval(() =>
+        {
+            downloadInterval++;
+
+            for (let downloadNumber = 0; downloadNumber < global.queuedDownloads.length; downloadNumber++) {
+                const download = global.queuedDownloads[downloadNumber];
+
+                if (download != null) {
+                    global.ongoingDownloads.push(global.queuedDownloads.shift());
+                    update.downloadFile(download.url, download.path);
+                }
+            }
+
+            if (downloadInterval < 10)
+                return;
+
+            // calculate overall progress
+            let overallDone = 0;
+            let overallTotal = 0;
+            let overallProgress = 0;
+            let overallRate = 0;
+            let overallEta = 0;
+
+            for (const url in global.downloadProgresses) {
+                if (global.downloadProgresses[url] != null) {
+                    overallDone += global.downloadProgresses[url].done;
+                    overallTotal += global.downloadProgresses[url].total;
+                    overallProgress += global.downloadProgresses[url].progress;
+                    overallRate += global.downloadProgresses[url].rate;
+                    overallEta += global.downloadProgresses[url].eta;
+                };
+            };
+
+            // average everything out
+            let downloadProgressesLength = global.downloadProgresses.length + 1;
+
+            overallTotal = overallTotal / downloadProgressesLength;
+            overallDone = overallDone / downloadProgressesLength;
+            overallProgress = overallProgress / downloadProgressesLength;
+            overallRate = overallRate / downloadProgressesLength;
+            overallEta = overallEta / downloadProgressesLength;
+
+            if (global.ongoingDownloads.length != 0 || global.queuedDownloads.length != 0)
+            {
+                globals.updateInProgress = true;
+
+                // update progress bars
+                global.mainWindow.webContents.send('hideProgressBarCurrent', false);
+                global.mainWindow.webContents.send('setProgressBarCurrentPercent', overallProgress);
+
+                const etaDate = addSeconds(new Date(), overallEta);
+
+                global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate, 'MB')}/s) ETA: ${distanceInWordsToNow(etaDate)}`);
+            }
+
+            if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0 && global.validatingFiles.length == 0)
+            {
+                globals.updateInProgress = false;
+
+                global.userSettings.clientVersion = globals.serverVersion;
+                settings.save(app.getPath('userData'));
+
+                // all downloads are done hide progress bars
+                global.mainWindow.webContents.send('setProgressBarCurrentPercent', 0);
+                global.mainWindow.webContents.send('setProgressTextCurrent', '');
+                global.mainWindow.webContents.send('hideProgressBarCurrent', true);
+
+                global.mainWindow.webContents.send('setProgressBarOverallPercent', 0);
+                global.mainWindow.webContents.send('setProgressTextOverall', '');
+                global.mainWindow.webContents.send('hideProgressBarOverall', true);
+
+                global.mainWindow.webContents.send('setPlayButtonState', false);
+                global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+
+                global.mainWindow.webContents.send('setVerifyButtonState', false);
+                global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+
+                clearInterval(global.updateLoop);
+            }
+        }, 1000);
+    }
+}
 
 ipcMain.on('beginDownload', async function(event)
 {
-    global.updateInProgress        = true;
-    global.userSettings.needUpdate = true;
-    global.downloadOngoing         = true;
-    global.update_buffer           = true;
-    global.version_buffer          = 0;
-
-
-    update.checkMD5AndUpdate(selectedFolder(), globals.deusDownload).then(() => {
-        settings.save(app.getPath('userData'));
+    update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() =>
+    {
+        startUpdateLoop();
     });
-
-
-    let downloadInterval = 0;
-    setInterval(() => {
-        downloadInterval++;
-
-        for (let downloadNumber = 0; downloadNumber < global.queuedDownloads.length; downloadNumber++) {
-            const download = global.queuedDownloads[downloadNumber];
-
-            if (download != null) {
-                global.ongoingDownloads.push(global.queuedDownloads.shift());
-                update.downloadFile(download.url, download.path);
-            }
-        }
-
-        if (downloadInterval < 10)
-            return;
-
-        // calculate overall progress
-        let overallDone = 0;
-        let overallTotal = 0;
-        let overallProgress = 0;
-        let overallRate = 0;
-        let overallEta = 0;
-
-        for (const url in global.downloadProgresses) {
-            if (global.downloadProgresses[url] != null) {
-                overallDone += global.downloadProgresses[url].done;
-                overallTotal += global.downloadProgresses[url].total;
-                overallProgress += global.downloadProgresses[url].progress;
-                overallRate += global.downloadProgresses[url].rate;
-                overallEta += global.downloadProgresses[url].eta;
-            };
-        };
-
-        // average everything out
-        let downloadProgressesLength = global.downloadProgresses.length + 1;
-
-        overallTotal = overallTotal / downloadProgressesLength;
-        overallDone = overallDone / downloadProgressesLength;
-        overallProgress = overallProgress / downloadProgressesLength;
-        overallRate = overallRate / downloadProgressesLength;
-        overallEta = overallEta / downloadProgressesLength;
-
-        if (global.ongoingDownloads.length != 0 || global.queuedDownloads.length != 0)
-        {
-            // update progress bars
-            global.mainWindow.webContents.send('hideProgressBarCurrent', false);
-            global.mainWindow.webContents.send('setProgressBarCurrentPercent', overallProgress);
-
-            const etaDate = addSeconds(new Date(), overallEta);
-
-            global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate)}/s) ETA: ${distanceInWordsToNow(etaDate)}`);
-        }
-
-        if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0 && global.validatingFiles.length == 0)
-        {
-            // all downloads are done hide progress bars
-            global.mainWindow.webContents.send('setProgressBarCurrentPercent', 0);
-            global.mainWindow.webContents.send('setProgressTextCurrent', '');
-            global.mainWindow.webContents.send('hideProgressBarCurrent', true);
-
-            global.mainWindow.webContents.send('setProgressBarOverallPercent', 0);
-            global.mainWindow.webContents.send('setProgressTextOverall', '');
-            global.mainWindow.webContents.send('hideProgressBarOverall', true);
-
-            global.mainWindow.webContents.send('setPlayButtonState', false);
-            global.mainWindow.webContents.send('setPlayButtonText', 'Play');
-
-            global.mainWindow.webContents.send('setVerifyButtonState', false);
-            global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
-
-            global.userSettings.clientVersion     = globals.serverVersion;
-            global.userSettings.gameDownloaded    = true;
-            global.userSettings.needUpdate        = false;
-            global.userSettings.updateInProgress  = false;
-            global.userSettings.downloadOngoing   = false;
-
-            globals.updateInProgress = false;
-
-            settings.save(app.getPath('userData'));
-        }
-    }, 1000);
 });
 
 ipcMain.on('beginVerify', async function(event)
 {
-  global.updateInProgress        = true;
-  global.userSettings.needUpdate = true;
-  global.downloadOngoing         = true;
-  global.update_buffer           = true;
-  global.version_buffer          = 0;
-
-  //track progress
-
-
-  update.checkMD5AndUpdate(selectedFolder(), globals.deusDownload).then(() => {
-    settings.save(app.getPath('userData'));
-  });
-
-  setInterval(update.trackProgress(), 1000);
+    update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() =>
+    {
+        startUpdateLoop();
+    });
 });
 
-ipcMain.on('messageBox', function(event, text)
-{
-  var options = {
-    type: 'error',
-    title: 'Error!',
-    message: text
-  }
-
-  dialog.showMessageBox(global.mainWindow, options);
-})
-
-ipcMain.on('error_moving_files', function(event, inSettings)
-{
-  const options = {
-    type: 'error',
-    buttons: ['Okay'],
-    defaultId: 2,
-    title: 'Question',
-    message: 'Please wait you are moving game files currently.'
-  };
-
-  dialog.showMessageBox(null, options, (response) => {
-    console.log(response);
-  });
-});
-
-ipcMain.on('launchGame', function(event)
+ipcMain.on('launchGame', async function(event)
 {
   try
   {
     let rootPath  = selectedFolder();
-    let exePath   = rootPath + '\\Deus.exe';
+    let exePath   = rootPath + path.sep + 'Whitemane.exe';
 
     console.log(rootPath);
 
     // Remove cache on client launch
-    let first_cache    = rootPath + "\\Cache";
-    let second_cache   = rootPath + "\\Data\\Cache";
+    let first_cache    = rootPath + path.sep + "Cache";
+    let second_cache   = rootPath + path.sep + "Data" + path.sep + "Cache";
 
     try
     {
@@ -342,6 +302,99 @@ ipcMain.on('launchGame', function(event)
     global.mainWindow.webContents.send('setVerifyButtonState', true);
     global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-warning" aria-hidden="true"></i> Game is running');
 
+    let filesToCheck = [
+        'Whitemane.exe',
+        "Data" + path.sep + "wow-update-base-39665.MPQ"
+    ];
+
+
+    let passedIntegrity = true;
+    // Check each file md5 hash to see if it's the correct version
+    for (let i = 0; i < filesToCheck.length; i++)
+    {
+        // Check if the file exists
+        if(!fs.existsSync(rootPath + path.sep + filesToCheck[i]))
+        {
+            passedIntegrity = false;
+            break;
+        }
+
+        const md5Passed = await update.checkMD5(rootPath + path.sep + filesToCheck[i], globals.cataDownload);
+
+        if (!md5Passed)
+        {
+            passedIntegrity = false;
+            break;
+        }
+    }
+
+    if (!passedIntegrity)
+    {
+        global.mainWindow.webContents.send('hideProgressBarOverall', false);
+        global.mainWindow.webContents.send('hideProgressBarCurrent', false);
+        global.mainWindow.webContents.send('setPlayButtonText', 'Verifying');
+
+        update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
+            startUpdateLoop();
+        });
+
+        return;
+    }
+
+    // check config.wtf in ./WTF/Config.wtf for locale. Ensure it's enUS
+
+    let configWTF = rootPath + path.sep + "WTF" + path.sep + "Config.wtf";
+    if(fs.existsSync(configWTF))
+    {
+        let configWTFData = fs.readFileSync(configWTF, 'utf8');
+
+        // find 'SET locale "enUS"'
+
+        let localeRegex = /SET locale "(.*)"/;
+        let localeMatch = configWTFData.match(localeRegex);
+
+        // find "set realmlist"
+        let realmlistRegex = /SET realmlist "(.*)"/;
+
+        let realmlistMatch = configWTFData.match(realmlistRegex);
+
+        // find "set patchlist"
+        let patchlistRegex = /SET patchlist "(.*)"/;
+        let patchlistMatch = configWTFData.match(patchlistRegex);
+        let configChanged = false;
+
+        if (localeMatch)
+        {
+            // set to enUS
+            if (localeMatch[1] !== 'enUS')
+            {
+                configWTFData = configWTFData.replace(localeRegex, 'SET locale "enUS"');
+                configChanged = true;
+            }
+        }
+
+        if (realmlistMatch)
+        {
+            if (realmlistMatch[1] !== 'logon.gamefreedom.org:3725')
+            {
+                configWTFData = configWTFData.replace(realmlistRegex, 'SET realmlist "logon.gamefreedom.org:3725"');
+                configChanged = true;
+            }
+        }
+
+        if (patchlistMatch)
+        {
+            if (patchlistMatch[1] !== '127.0.0.1')
+            {
+                configWTFData = configWTFData.replace(patchlistRegex, 'SET patchlist "127.0.0.1"');
+                configChanged = true;
+            }
+        }
+
+        if (configChanged)
+            fs.writeFileSync(configWTF, configWTFData);
+    }
+
     switch (process.platform)
     {
       case "win32":
@@ -349,10 +402,21 @@ ipcMain.on('launchGame', function(event)
         exec(`set __COMPAT_LAYER=WIN7RTM && "${ exePath }"`, function(error, data)
         {
           if (error)
-            throw new Error(error);
+          {
+            const warn = {
+                type: 'warning',
+                title: 'Integrity Failed',
+                message: "Please verify integrity of your game files in launcher settings."
+            };
 
-          global.mainWindow.webContents.send('setPlayButtonState', false);
-          global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+            dialog.showMessageBox(warn);
+          }
+          else
+          {
+            global.mainWindow.webContents.send('setPlayButtonState', false);
+            global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+          }
+
           global.mainWindow.webContents.send('setVerifyButtonState', false);
           global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
         });
@@ -363,8 +427,24 @@ ipcMain.on('launchGame', function(event)
       {
         exec(`WINEPREFIX="/home/$(whoami)/.config/GameFreedom/" WINEARCH=win64 wine "${ exePath }"`, function(error, data)
         {
-          if (error)
-            throw new Error(error);
+            if (error)
+            {
+              const warn = {
+                  type: 'warning',
+                  title: 'Integrity Failed',
+                  message: "Please verify integrity of your game files launcher settings."
+              };
+
+              dialog.showMessageBox(warn);
+            }
+            else
+            {
+              global.mainWindow.webContents.send('setPlayButtonState', false);
+              global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+            }
+
+            global.mainWindow.webContents.send('setVerifyButtonState', false);
+            global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
         });
 
         break;
@@ -393,7 +473,7 @@ ipcMain.on('launchGame', function(event)
 autoUpdater.on('update-available', function()
 {
   global.mainWindow.webContents.send('update_available');
-  global.launcherUpdateFound = true;
+  globals.launcherUpdateFound = true;
 });
 
 autoUpdater.on('update-downloaded', function()
@@ -429,15 +509,15 @@ ipcMain.on('selectDirectory', async function(event)
     properties: ['openDirectory']
   });
 
-  if (global.updateInProgress == true)
+  if (globals.updateInProgress == true)
   {
-    const warning = {
-        type: 'warn',
+    const warn = {
+        type: 'warning',
         title: 'Please wait',
         message: "There's already a download in progress."
     };
 
-    dialog.showMessageBox(warning);
+    dialog.showMessageBox(warn);
     return;
   }
 
@@ -465,13 +545,13 @@ ipcMain.on('selectDirectory', async function(event)
   }
   else
   {
-    const warning = {
-        type: 'warn',
+    const warn = {
+        type: 'warning',
         title: 'Warning',
         message: "Something went wrong with choosing your new game path, please try again."
     };
 
-    dialog.showMessageBox(warning);
+    dialog.showMessageBox(warn);
   }
 });
 
@@ -502,12 +582,12 @@ ipcMain.on('firstSelectDirectory', async function(event)
   }
   else
   {
-    const warning = {
-        type: 'warn',
+    const warn = {
+        type: 'warning',
         title: 'Warning',
         message: "Something went wrong with choosing your game path, please try again."
     };
 
-    dialog.showMessageBox(warning);
+    dialog.showMessageBox(warn);
   }
 });
