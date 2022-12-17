@@ -153,36 +153,6 @@ module.exports = {
         return false;
     },
 
-    async checkFileSize(file, jsonURL)
-    {
-
-        // Fetch the JSON file from the given URL using Axios
-        const response = await axios.get(jsonUrl);
-        const filesData = response.data;
-
-        for (const file of filesData)
-        {
-            const filePath = Object.keys(file)[0];
-            const expectedSize = file[filePath];
-
-            let relativePath = path.join(localPath, filePath);
-
-            if (fs.existsSync(relative))
-            {
-                const stats = fs.statSync(relativePath);
-
-                if (stats.size != expectedSize)
-                {
-                    return false;
-                }
-
-                return true;
-            }
-        }
-
-        return false;
-    },
-
     async checkMD5AndUpdate(localPath, jsonUrl)
     {
         globals.updateInProgress = true;
@@ -191,7 +161,7 @@ module.exports = {
         const response = await axios.get(jsonUrl);
         const filesData = response.data;
 
-        let filesCompleted = 0;
+        let filesCompleted = 1;
         // Iterate over the entries in the JSON file
         for (const entry of filesData) {
             global.validatingFiles.push(entry);
@@ -201,8 +171,7 @@ module.exports = {
             const fileUrl = `https://cdn-1.gamefreedom.org/${global.userSettings.gameName}/${filePath}`;
 
             // get value of json array value
-            const expectedHash = entry[filePath]["checksum"];
-            const expectedSize = entry[filePath]["size"];
+            const expectedHash = entry[filePath];
 
             let relativePath = path.join(localPath, filePath);
 
@@ -222,38 +191,33 @@ module.exports = {
                  fs.closeSync(fs.openSync(relativePath, 'w'));
             }
 
-            // Check if file size is incorrect
-            const stats = fs.statSync(relativePath);
-            if (stats.size != expectedSize)
-            {
-                let hash = crypto.createHash('md5'),
+            let hash = crypto.createHash('md5'),
                 stream = fs.createReadStream(relativePath);
 
-                stream.on('data', _buff => { hash.update(_buff, 'utf8'); });
-                stream.on('end', async function() {
-                    const actualHash = hash.digest('hex');
+            stream.on('data', _buff => { hash.update(_buff, 'utf8'); });
+            stream.on('end', async function() {
+                const actualHash = hash.digest('hex');
 
-                    // Compare the actual and expected hashes
-                    if (actualHash !== expectedHash) {
-                        console.log(`File ${filePath} is outdated, expected hash: ${expectedHash}, actual hash: ${actualHash}`);
+                // Compare the actual and expected hashes
+                if (actualHash !== expectedHash) {
+                    console.log(`File ${filePath} is outdated, expected hash: ${expectedHash}, actual hash: ${actualHash}`);
 
-                        // Download the updated file from the given URL
-                        global.queuedDownloads.push({url: fileUrl, path: relativePath});
-                    } else {
-                        console.log(`File ${filePath} is up-to-date`);
-                    }
-                });
-            }
+                    // Download the updated file from the given URL
+                    global.queuedDownloads.push({url: fileUrl, path: relativePath});
+                } else {
+                    console.log(`File ${filePath} is up-to-date`);
+                }
 
-            // update progress bar
-            const percentCompleted = Math.floor(filesCompleted / filesData.length * 100)
-            global.mainWindow.webContents.send('setProgressBarOverallPercent', percentCompleted);
+                // update progress bar
+                const percentCompleted = Math.floor(filesCompleted / filesData.length * 100)
+                global.mainWindow.webContents.send('setProgressBarOverallPercent', percentCompleted);
 
-            filesCompleted++;
+                // update progress bar text
+                global.mainWindow.webContents.send('setProgressTextOverall', `Validating ${relativePath} ${percentCompleted}% (${filesCompleted}/${filesData.length})`);
+                filesCompleted++;
 
-            // update progress bar text
-            global.mainWindow.webContents.send('setProgressTextOverall', `Validating ${relativePath} ${percentCompleted}% (${filesCompleted}/${filesData.length})`);
-            global.validatingFiles.splice(global.validatingFiles.indexOf(entry), 1);
+                global.validatingFiles.splice(global.validatingFiles.indexOf(entry), 1);
+            });
         }
     }
 }
