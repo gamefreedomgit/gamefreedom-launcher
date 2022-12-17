@@ -302,44 +302,44 @@ ipcMain.on('launchGame', async function(event)
     global.mainWindow.webContents.send('setVerifyButtonState', true);
     global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-warning" aria-hidden="true"></i> Game is running');
 
-    let filesToCheck = [
-        'Whitemane.exe',
-        "Data" + path.sep + "wow-update-base-39665.MPQ"
-    ];
+    // let filesToCheck = [
+    //     'Whitemane.exe',
+    //     "Data" + path.sep + "wow-update-base-39665.MPQ"
+    // ];
 
 
-    let passedIntegrity = true;
-    // Check each file md5 hash to see if it's the correct version
-    for (let i = 0; i < filesToCheck.length; i++)
-    {
-        // Check if the file exists
-        if(!fs.existsSync(rootPath + path.sep + filesToCheck[i]))
-        {
-            passedIntegrity = false;
-            break;
-        }
+    // let passedIntegrity = true;
+    // // Check each file md5 hash to see if it's the correct version
+    // for (let i = 0; i < filesToCheck.length; i++)
+    // {
+    //     // Check if the file exists
+    //     if(!fs.existsSync(rootPath + path.sep + filesToCheck[i]))
+    //     {
+    //         passedIntegrity = false;
+    //         break;
+    //     }
 
-        const md5Passed = await update.checkMD5(rootPath + path.sep + filesToCheck[i], globals.cataDownload);
+    //     const md5Passed = await update.checkMD5(rootPath + path.sep + filesToCheck[i], globals.cataDownload);
 
-        if (!md5Passed)
-        {
-            passedIntegrity = false;
-            break;
-        }
-    }
+    //     if (!md5Passed)
+    //     {
+    //         passedIntegrity = false;
+    //         break;
+    //     }
+    // }
 
-    if (!passedIntegrity)
-    {
-        global.mainWindow.webContents.send('hideProgressBarOverall', false);
-        global.mainWindow.webContents.send('hideProgressBarCurrent', false);
-        global.mainWindow.webContents.send('setPlayButtonText', 'Verifying');
+    // if (!passedIntegrity)
+    // {
+    //     global.mainWindow.webContents.send('hideProgressBarOverall', false);
+    //     global.mainWindow.webContents.send('hideProgressBarCurrent', false);
+    //     global.mainWindow.webContents.send('setPlayButtonText', 'Verifying');
 
-        update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
-            startUpdateLoop();
-        });
+    //     update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
+    //         startUpdateLoop();
+    //     });
 
-        return;
-    }
+    //     return;
+    // }
 
     // check config.wtf in ./WTF/Config.wtf for locale. Ensure it's enUS
 

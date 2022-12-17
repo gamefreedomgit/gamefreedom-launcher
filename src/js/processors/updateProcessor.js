@@ -33,17 +33,17 @@ module.exports = {
                 }
             }
 
-            if (gameVersion != global.version_buffer)
-            {
-                globals.needUpdate = true;
+            // if (gameVersion != global.version_buffer)
+            // {
+            //     globals.needUpdate = true;
 
-                global.mainWindow.webContents.send('setPlayButtonState', false);
-                global.mainWindow.webContents.send('setPlayButtonText', 'Update');
+            //     global.mainWindow.webContents.send('setPlayButtonState', false);
+            //     global.mainWindow.webContents.send('setPlayButtonText', 'Update');
 
-                global.mainWindow.webContents.send('setPlayButtonState', false);
-                global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Update required');
-            }
-            else
+            //     global.mainWindow.webContents.send('setPlayButtonState', false);
+            //     global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Update required');
+            // }
+            // else
             {
                 globals.needUpdate = false;
 
