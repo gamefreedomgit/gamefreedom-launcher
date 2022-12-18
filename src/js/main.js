@@ -186,39 +186,31 @@ function startUpdateLoop()
             // Calculate overall progress.
             let overallDone     = 0;
             let overallTotal    = 0;
-            let overallProgress = 0;
             let overallRate     = 0;
             let overallEta      = 0;
 
-            for (const url in global.downloadProgresses) {
-                if (global.downloadProgresses[url] != null) {
+            for (const url in global.downloadProgresses)
+            {
+                if (global.downloadProgresses[url] != null)
+                {
                     overallDone     += global.downloadProgresses[url].done;
                     overallTotal    += global.downloadProgresses[url].total;
-                    overallProgress += global.downloadProgresses[url].progress;
                     overallRate     += global.downloadProgresses[url].rate;
                     overallEta      += global.downloadProgresses[url].eta;
                 };
             };
 
-            // Average everything out.
-            let downloadProgressesLength = global.downloadProgresses.length + 1;
-
-            overallTotal    = overallTotal     / downloadProgressesLength;
-            overallDone     = overallDone      / downloadProgressesLength;
-            overallProgress = Math.floor(overallProgress / downloadProgressesLength * 100);
-            overallRate     = overallRate      / downloadProgressesLength;
-            overallEta      = overallEta       / downloadProgressesLength;
+            let overallProgress = (overallTotal > 0 && overallDone > 0) ? Math.ceil(overallDone / (overallTotal / 100)) : 0;
 
             if (global.ongoingDownloads.length != 0 || global.queuedDownloads.length != 0)
             {
-                const etaDate          = addSeconds(new Date(), overallEta);
-                global.mainWindow.webContents.send('SetDataProgressBar_Current', overallProgress, `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate, 'MB')}/s) ETA: ${distanceInWordsToNow(etaDate)}`, false);
+                const etaDate   = addSeconds(new Date(), overallEta);
+                global.mainWindow.webContents.send('SetDataProgressBar_Current', (overallProgress > 100) ? 100 : overallProgress, `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate, 'MB')}/s) ETA: ${distanceInWordsToNow(etaDate)}`, false);
             }
 
-            if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0)
+            if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0 && overallProgress >= 100)
             {
-                if (overallProgress == 100)
-                    global.mainWindow.webContents.send('SetDataProgressBar_Current', 0, '', true);
+                global.mainWindow.webContents.send('SetDataProgressBar_Current', 0, '', true);
 
                 if (globals.validationInProgress == true)
                     return;

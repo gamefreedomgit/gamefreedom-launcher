@@ -98,11 +98,12 @@ module.exports = {
         globals.initialized = true;
     },
 
-    downloadFile: async function(url, path) {
+    downloadFile: async function(url, path)
+    {
         const res = await fetch(url);
         const progress = new Progress(res, { throttle: 100 })
         progress.on('progress', (p) => {
-            downloadProgresses[url] = p;
+            global.downloadProgresses[url] = p;
         });
 
         const fileStream = fs.createWriteStream(path);
