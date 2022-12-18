@@ -1,14 +1,12 @@
 const fs          = require('fs');
-const globals     = require( '../globals.js' ).globals;
 const update      = require('./updateProcessor.js');
 const log         = require('./logProcessor.js');
-const ipcRenderer = require('electron').ipcRenderer;
 
 const default_settings = {
     gameName: "maelstrom",
     gameLocation: "",
-    httpUpdate: true,
-    clientVersion: 0,
+    gameValidated: false,
+    clientVersion: 0
 }
 
 function write_default(location)
@@ -23,8 +21,8 @@ function write_default(location)
         }
 
         global.userSettings = default_settings;
-        global.mainWindow.webContents.send('setGameLocation', default_settings.gameLocation);
-        global.mainWindow.webContents.send('showFirstTimeSetup');
+        global.mainWindow.webContents.send('SetGameLocation', default_settings.gameLocation);
+        global.mainWindow.webContents.send('ShowFirstTimeSetup');
     });
 }
 
@@ -50,13 +48,13 @@ module.exports = {
             global.userSettings = JSON.parse(settings);
             global.userSettings.save = module.exports.save;
 
-            if (global.userSettings.httpUpdate == undefined) // old config
+            if (global.userSettings.gameValidated == undefined) // old config
             {
                 write_default(location);
                 return;
             }
 
-            global.mainWindow.webContents.send('setGameLocation', global.userSettings.gameLocation);
+            global.mainWindow.webContents.send('SetGameLocation', global.userSettings.gameLocation);
             update.initialize();
         })
     },

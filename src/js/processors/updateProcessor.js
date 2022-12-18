@@ -5,7 +5,7 @@ const fs          = require('fs');
 const path        = require('path');
 const globals     = require('../globals.js').globals;
 const Progress    = require('node-fetch-progress');
-const settings    = require('./settingsProcessor.js');
+const settings    = require('./settingsProcessor');
 const autoUpdater = require('electron-updater').autoUpdater;
 const log         = require('./logProcessor');
 
@@ -14,7 +14,7 @@ let queueLoop = null;
 module.exports = {
     checkForUpdates: function(callback)
     {
-        if (globals.updateInProgress == true)
+        if (globals.updateInProgress == true || globals.validationInProgress == true)
             return;
 
         axios.get(globals.launcherInfo)
@@ -33,25 +33,29 @@ module.exports = {
                 }
             }
 
-            // if (gameVersion != global.version_buffer)
-            // {
-            //     globals.needUpdate = true;
+            if ((gameVersion != global.version_buffer) || (global.userSettings.gameValidated == false) || (global.userSettings.gameValidated == undefined))
+            {
+                globals.needUpdate = true;
 
-            //     global.mainWindow.webContents.send('setPlayButtonState', false);
-            //     global.mainWindow.webContents.send('setPlayButtonText', 'Update');
+                global.mainWindow.webContents.send('SetPlayButtonState', false);
+                global.mainWindow.webContents.send('SetPlayButtonText', 'Update Available');
 
-            //     global.mainWindow.webContents.send('setPlayButtonState', false);
-            //     global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Update required');
-            // }
-            // else
+                global.mainWindow.webContents.send('SetValidateButtonState', false);
+                global.mainWindow.webContents.send('SetValidateButtonText', '<i class="fa fa-info-circle" aria-hidden="true"></i> Update Required');
+            }
+            else
             {
                 globals.needUpdate = false;
 
-                global.mainWindow.webContents.send('setPlayButtonState', false);
-                global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+                // All downloads are done clear and hide progress bars.
+                global.mainWindow.webContents.send('SetDataProgressBar_Overall', 0, '', true);
+                global.mainWindow.webContents.send('SetDataProgressBar_Current', 0, '', true);
 
-                global.mainWindow.webContents.send('setVerifyButtonState', false);
-                global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+                global.mainWindow.webContents.send('SetPlayButtonState', false);
+                global.mainWindow.webContents.send('SetPlayButtonText', 'Play');
+
+                global.mainWindow.webContents.send('SetValidateButtonState', false);
+                global.mainWindow.webContents.send('SetValidateButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
             }
 
             if (callback)
@@ -89,14 +93,7 @@ module.exports = {
             }
         }, 60000);
 
-        this.checkForUpdates(function()
-        {
-            if (globals.needUpdate == true)
-            {
-                global.mainWindow.webContents.send('setPlayButtonState', false);
-                global.mainWindow.webContents.send('setPlayButtonText', 'Update Available');
-            }
-        });
+        this.checkForUpdates();
 
         globals.initialized = true;
     },
@@ -120,58 +117,59 @@ module.exports = {
         });
     },
 
-    async checkMD5(file, jsonURL)
+    async checkGameFilesSize(localPath, jsonUrl)
     {
-        const response = await axios.get(jsonURL);
+        // Fetch the JSON file from the given URL using Axios
+        const response  = await axios.get(jsonUrl);
         const filesData = response.data;
 
-        for (const entry of filesData)
-        {
+        let filesCompleted = 0;
+        // Iterate over the entries in the JSON file
+        for (const entry of filesData) {
+
+            // get key of json array value
             const filePath = Object.keys(entry)[0];
-            const expectedHash = entry[filePath];
 
-            let relativePath = path.join(global.userSettings.gameLocation, filePath);
+            // get value of json array value
+            const expectedSize = entry[filePath]["size"];
+            let relativePath = path.join(localPath, filePath);
 
-            if (file == relativePath)
+            // Check if file exists and has correct size
+            if (!fs.existsSync(relativePath) || fs.statSync(relativePath).size != expectedSize)
             {
-                const fileContent = fs.readFileSync(file);
-
-                const hash = crypto.createHash('md5');
-                hash.update(fileContent);
-
-                const md5 = hash.digest('hex');
-
-                if (md5 != expectedHash)
-                {
-                    return false;
-                }
-
-                return true;
+                global.userSettings.gameValidated = false;
+                return false;
             }
+
+            filesCompleted++;
+
+            if (filesCompleted == filesData.length)
+                return true;
         }
 
+        global.userSettings.gameValidated = false;
         return false;
     },
 
     async checkMD5AndUpdate(localPath, jsonUrl)
     {
-        globals.updateInProgress = true;
+        globals.validationInProgress = true;
 
         // Fetch the JSON file from the given URL using Axios
-        const response = await axios.get(jsonUrl);
+        const response  = await axios.get(jsonUrl);
         const filesData = response.data;
 
-        let filesCompleted = 1;
+        let filesCompleted = 0;
         // Iterate over the entries in the JSON file
-        for (const entry of filesData) {
-            global.validatingFiles.push(entry);
-
+        for (const entry of filesData)
+        {
             // get key of json array value
             const filePath = Object.keys(entry)[0];
             const fileUrl = `https://cdn-1.gamefreedom.org/${global.userSettings.gameName}/${filePath}`;
 
             // get value of json array value
-            const expectedHash = entry[filePath];
+            const expectedHash = entry[filePath]["checksum"];
+            const expectedSize = entry[filePath]["size"];
 
             let relativePath = path.join(localPath, filePath);
 
@@ -191,32 +189,48 @@ module.exports = {
                  fs.closeSync(fs.openSync(relativePath, 'w'));
             }
 
-            let hash = crypto.createHash('md5'),
-                stream = fs.createReadStream(relativePath);
+            const stats = fs.statSync(relativePath);
+            let stream  = fs.createReadStream(relativePath);
+            let hash    = crypto.createHash('md5');
 
             stream.on('data', _buff => { hash.update(_buff, 'utf8'); });
-            stream.on('end', async function() {
+            stream.on('end', async function()
+            {
                 const actualHash = hash.digest('hex');
 
+                // Compare the actual and expected sizes
+                if (stats.size !== expectedSize)
+                {
+                    console.log(`File ${filePath} is outdated, expected size: ${expectedSize}, actual size: ${stats.size}`);
+
+                    // Download the updated file from the given URL
+                    global.queuedDownloads.push({url: fileUrl, path: relativePath});
+                }
                 // Compare the actual and expected hashes
-                if (actualHash !== expectedHash) {
+                else if (actualHash !== expectedHash)
+                {
                     console.log(`File ${filePath} is outdated, expected hash: ${expectedHash}, actual hash: ${actualHash}`);
 
                     // Download the updated file from the given URL
                     global.queuedDownloads.push({url: fileUrl, path: relativePath});
-                } else {
-                    console.log(`File ${filePath} is up-to-date`);
                 }
+                else
+                {
+                    console.log(`File ${filePath} is up-to-date`);
+                };
 
-                // update progress bar
-                const percentCompleted = Math.floor(filesCompleted / filesData.length * 100)
-                global.mainWindow.webContents.send('setProgressBarOverallPercent', percentCompleted);
 
-                // update progress bar text
-                global.mainWindow.webContents.send('setProgressTextOverall', `Validating ${relativePath} ${percentCompleted}% (${filesCompleted}/${filesData.length})`);
                 filesCompleted++;
+                const percentCompleted = Math.floor(filesCompleted / filesData.length * 100);
+                global.mainWindow.webContents.send('SetDataProgressBar_Overall', percentCompleted, `Validating ${relativePath} ${percentCompleted}% (${filesCompleted}/${filesData.length})`, false);
 
-                global.validatingFiles.splice(global.validatingFiles.indexOf(entry), 1);
+                if (filesCompleted == filesData.length)
+                {
+                    global.userSettings.gameValidated = true;
+                    global.userSettings.clientVersion = globals.serverVersion;
+                    global.version_buffer             = globals.serverVersion;
+                    globals.validationInProgress      = false;
+                }
             });
         }
     }

@@ -1,25 +1,20 @@
-const { app, BrowserWindow, ipcRenderer, ipcMain, dialog, session, url, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, globalShortcut } = require('electron');
 const { autoUpdater }                 = require('electron-updater');
 const log                             = require('../js/processors/logProcessor');
 const settings                        = require('../js/processors/settingsProcessor');
 const path                            = require('path');
 const {globals}                       = require('../js/globals.js');
 const update                          = require('./processors/updateProcessor');
-const files                           = require('./utils/fileManager.js');
 const child                           = require('child_process').execFile;
 const fs                              = require('fs-extra');
-const app_data_path                   = require('appdata-path');
 const { exec }                        = require('child_process');
 const { execPath }                    = require('process');
-const { dir }                         = require('console');
-var Sudoer                            = require('electron-sudo').default;
 
-const distanceInWordsToNow = require('date-fns/formatDistanceToNow')
-const addSeconds = require('date-fns/addSeconds')
-const bytes = require('bytes')
+const distanceInWordsToNow            = require('date-fns/formatDistanceToNow')
+const addSeconds                      = require('date-fns/addSeconds')
+const bytes                           = require('bytes')
 
 const env         = process.env.NODE_ENV || 'development';
-const get_runtime = new Date();
 
 // If development environment
 if (env === 'development') {
@@ -33,19 +28,19 @@ if (env === 'development') {
 
 // Handle creating / removing shortcuts on windows when (un)installing
 if (require('electron-squirrel-startup')) // eslint-disable-line global-require
-  app.quit();
+    app.quit();
 
 // Disables hardware acceleration for current app
 app.disableHardwareAcceleration();
 
-function selectedFolder()
+function SelectedFolder()
 {
-  return global.userSettings.gameLocation;
+  return global.userSettings.gameLocation == undefined ? '' : path.normalize(global.userSettings.gameLocation);
 }
 
-function selectedGame()
+function IsSelectedGameValidated()
 {
-  return global.userSettings.gameName;
+  return global.userSettings.gameValidated == undefined ? false : global.userSettings.gameValidated;
 }
 
 function initiate()
@@ -116,7 +111,6 @@ function create_main_window()
       console.log(currentURL);
 
       settings.load(global.userData);
-
     }, 5000);
   });
 
@@ -149,7 +143,8 @@ app.on('window-all-closed', function()
     app.quit();
 });
 
-app.on('browser-window-focus', function () {
+app.on('browser-window-focus', function ()
+{
     globalShortcut.register("CommandOrControl+R", () => {
         console.log("CommandOrControl+R is pressed: Shortcut Disabled");
     });
@@ -158,7 +153,8 @@ app.on('browser-window-focus', function () {
     });
 });
 
-app.on('browser-window-blur', function () {
+app.on('browser-window-blur', function ()
+{
     globalShortcut.unregister('CommandOrControl+R');
     globalShortcut.unregister('F5');
 });
@@ -166,335 +162,294 @@ app.on('browser-window-blur', function () {
 global.queuedDownloads    = [];
 global.ongoingDownloads   = [];
 global.downloadProgresses = [];
-global.validatingFiles    = [];
 global.updateLoop         = null;
 
 function startUpdateLoop()
 {
-    let downloadInterval = 0;
     if (global.updateLoop == null || global.updateLoop._destroyed == true)
     {
         global.updateLoop = setInterval(() =>
         {
-            downloadInterval++;
-
-            for (let downloadNumber = 0; downloadNumber < global.queuedDownloads.length; downloadNumber++) {
+            for (let downloadNumber = 0; downloadNumber < global.queuedDownloads.length; downloadNumber++)
+            {
                 const download = global.queuedDownloads[downloadNumber];
 
-                if (download != null) {
+                if (download != null)
+                {
+                    globals.updateInProgress  = true;
+
                     global.ongoingDownloads.push(global.queuedDownloads.shift());
                     update.downloadFile(download.url, download.path);
                 }
             }
 
-            if (downloadInterval < 10)
-                return;
-
-            // calculate overall progress
-            let overallDone = 0;
-            let overallTotal = 0;
+            // Calculate overall progress.
+            let overallDone     = 0;
+            let overallTotal    = 0;
             let overallProgress = 0;
-            let overallRate = 0;
-            let overallEta = 0;
+            let overallRate     = 0;
+            let overallEta      = 0;
 
             for (const url in global.downloadProgresses) {
                 if (global.downloadProgresses[url] != null) {
-                    overallDone += global.downloadProgresses[url].done;
-                    overallTotal += global.downloadProgresses[url].total;
+                    overallDone     += global.downloadProgresses[url].done;
+                    overallTotal    += global.downloadProgresses[url].total;
                     overallProgress += global.downloadProgresses[url].progress;
-                    overallRate += global.downloadProgresses[url].rate;
-                    overallEta += global.downloadProgresses[url].eta;
+                    overallRate     += global.downloadProgresses[url].rate;
+                    overallEta      += global.downloadProgresses[url].eta;
                 };
             };
 
-            // average everything out
+            // Average everything out.
             let downloadProgressesLength = global.downloadProgresses.length + 1;
 
-            overallTotal = overallTotal / downloadProgressesLength;
-            overallDone = overallDone / downloadProgressesLength;
-            overallProgress = overallProgress / downloadProgressesLength;
-            overallRate = overallRate / downloadProgressesLength;
-            overallEta = overallEta / downloadProgressesLength;
+            overallTotal    = overallTotal     / downloadProgressesLength;
+            overallDone     = overallDone      / downloadProgressesLength;
+            overallProgress = Math.floor(overallProgress / downloadProgressesLength * 100);
+            overallRate     = overallRate      / downloadProgressesLength;
+            overallEta      = overallEta       / downloadProgressesLength;
 
             if (global.ongoingDownloads.length != 0 || global.queuedDownloads.length != 0)
             {
-                globals.updateInProgress = true;
-
-                // update progress bars
-                global.mainWindow.webContents.send('hideProgressBarCurrent', false);
-                global.mainWindow.webContents.send('setProgressBarCurrentPercent', overallProgress);
-
-                const etaDate = addSeconds(new Date(), overallEta);
-
-                global.mainWindow.webContents.send('setProgressTextCurrent', `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate, 'MB')}/s) ETA: ${distanceInWordsToNow(etaDate)}`);
+                const etaDate          = addSeconds(new Date(), overallEta);
+                global.mainWindow.webContents.send('SetDataProgressBar_Current', overallProgress, `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate, 'MB')}/s) ETA: ${distanceInWordsToNow(etaDate)}`, false);
             }
 
-            if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0 && global.validatingFiles.length == 0)
+            if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0)
             {
+                if (overallProgress == 100)
+                    global.mainWindow.webContents.send('SetDataProgressBar_Current', 0, '', true);
+
+                if (globals.validationInProgress == true)
+                    return;
+
                 globals.updateInProgress = false;
 
-                global.userSettings.clientVersion = globals.serverVersion;
-                settings.save(app.getPath('userData'));
-
-                // all downloads are done hide progress bars
-                global.mainWindow.webContents.send('setProgressBarCurrentPercent', 0);
-                global.mainWindow.webContents.send('setProgressTextCurrent', '');
-                global.mainWindow.webContents.send('hideProgressBarCurrent', true);
-
-                global.mainWindow.webContents.send('setProgressBarOverallPercent', 0);
-                global.mainWindow.webContents.send('setProgressTextOverall', '');
-                global.mainWindow.webContents.send('hideProgressBarOverall', true);
-
-                global.mainWindow.webContents.send('setPlayButtonState', false);
-                global.mainWindow.webContents.send('setPlayButtonText', 'Play');
-
-                global.mainWindow.webContents.send('setVerifyButtonState', false);
-                global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+                // All downloads are done clear and hide progress bar.
+                global.mainWindow.webContents.send('SetDataProgressBar_Overall', 0, '', true);
 
                 clearInterval(global.updateLoop);
+
+                if (IsSelectedGameValidated())
+                {
+                    settings.save(app.getPath('userData'));
+
+                    global.mainWindow.webContents.send('SetPlayButtonState', false);
+                    global.mainWindow.webContents.send('SetPlayButtonText', 'Play');
+
+                    global.mainWindow.webContents.send('SetValidateButtonState', false);
+                    global.mainWindow.webContents.send('SetValidateButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+                }
             }
         }, 1000);
     }
 }
 
-ipcMain.on('beginDownload', async function(event)
+ipcMain.on('BeginDownloadOrValidate', async function(event)
 {
-    update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() =>
+    console.log("Event: BeginDownloadOrValidate");
+
+    update.checkMD5AndUpdate(SelectedFolder(), globals.cataDownload).then(() =>
     {
         startUpdateLoop();
     });
 });
 
-ipcMain.on('beginVerify', async function(event)
+ipcMain.on('LaunchGame', async function(event)
 {
-    update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() =>
-    {
-        startUpdateLoop();
-    });
-});
-
-ipcMain.on('launchGame', async function(event)
-{
-  try
-  {
-    let rootPath  = selectedFolder();
-    let exePath   = rootPath + path.sep + 'Whitemane.exe';
-
-    console.log(rootPath);
-
-    // Remove cache on client launch
-    let first_cache    = rootPath + path.sep + "Cache";
-    let second_cache   = rootPath + path.sep + "Data" + path.sep + "Cache";
+    console.log("Event: LaunchGame");
 
     try
     {
-        fs.rmSync(first_cache,  { recursive: true });
-        fs.rmSync(second_cache, { recursive: true });
-    }
-    catch (error)
-    {
-      log.error(error);
-    }
+      let rootPath  = SelectedFolder();
+      let exePath   = rootPath + path.sep + 'Whitemane.exe';
 
-    //! CHECK FOR THE LATEST PATCH FOR THAT SPECIFIC SERVER/REALM
-    global.mainWindow.webContents.send('setPlayButtonState', true);
-    global.mainWindow.webContents.send('setPlayButtonText', 'Running');
-    global.mainWindow.webContents.send('setVerifyButtonState', true);
-    global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-warning" aria-hidden="true"></i> Game is running');
+      console.log(rootPath);
 
-    // let filesToCheck = [
-    //     'Whitemane.exe',
-    //     "Data" + path.sep + "wow-update-base-39665.MPQ"
-    // ];
+      // Remove cache on client launch
+      let first_cache    = rootPath + path.sep + "Cache";
+      let second_cache   = rootPath + path.sep + "Data" + path.sep + "Cache";
 
-
-    // let passedIntegrity = true;
-    // // Check each file md5 hash to see if it's the correct version
-    // for (let i = 0; i < filesToCheck.length; i++)
-    // {
-    //     // Check if the file exists
-    //     if(!fs.existsSync(rootPath + path.sep + filesToCheck[i]))
-    //     {
-    //         passedIntegrity = false;
-    //         break;
-    //     }
-
-    //     const md5Passed = await update.checkMD5(rootPath + path.sep + filesToCheck[i], globals.cataDownload);
-
-    //     if (!md5Passed)
-    //     {
-    //         passedIntegrity = false;
-    //         break;
-    //     }
-    // }
-
-    // if (!passedIntegrity)
-    // {
-    //     global.mainWindow.webContents.send('hideProgressBarOverall', false);
-    //     global.mainWindow.webContents.send('hideProgressBarCurrent', false);
-    //     global.mainWindow.webContents.send('setPlayButtonText', 'Verifying');
-
-    //     update.checkMD5AndUpdate(selectedFolder(), globals.cataDownload).then(() => {
-    //         startUpdateLoop();
-    //     });
-
-    //     return;
-    // }
-
-    // check config.wtf in ./WTF/Config.wtf for locale. Ensure it's enUS
-
-    let configWTF = rootPath + path.sep + "WTF" + path.sep + "Config.wtf";
-    if(fs.existsSync(configWTF))
-    {
-        let configWTFData = fs.readFileSync(configWTF, 'utf8');
-
-        // find 'SET locale "enUS"'
-
-        let localeRegex = /SET locale "(.*)"/;
-        let localeMatch = configWTFData.match(localeRegex);
-
-        // find "set realmlist"
-        let realmlistRegex = /SET realmlist "(.*)"/;
-
-        let realmlistMatch = configWTFData.match(realmlistRegex);
-
-        // find "set patchlist"
-        let patchlistRegex = /SET patchlist "(.*)"/;
-        let patchlistMatch = configWTFData.match(patchlistRegex);
-        let configChanged = false;
-
-        if (localeMatch)
-        {
-            // set to enUS
-            if (localeMatch[1] !== 'enUS')
-            {
-                configWTFData = configWTFData.replace(localeRegex, 'SET locale "enUS"');
-                configChanged = true;
-            }
-        }
-
-        if (realmlistMatch)
-        {
-            if (realmlistMatch[1] !== 'logon.gamefreedom.org:3725')
-            {
-                configWTFData = configWTFData.replace(realmlistRegex, 'SET realmlist "logon.gamefreedom.org:3725"');
-                configChanged = true;
-            }
-        }
-
-        if (patchlistMatch)
-        {
-            if (patchlistMatch[1] !== '127.0.0.1')
-            {
-                configWTFData = configWTFData.replace(patchlistRegex, 'SET patchlist "127.0.0.1"');
-                configChanged = true;
-            }
-        }
-
-        if (configChanged)
-            fs.writeFileSync(configWTF, configWTFData);
-    }
-
-    switch (process.platform)
-    {
-      case "win32":
+      try
       {
-        exec(`set __COMPAT_LAYER=WIN7RTM && "${ exePath }"`, function(error, data)
-        {
-          if (error)
-          {
-            const warn = {
-                type: 'warning',
-                title: 'Integrity Failed',
-                message: "Please verify integrity of your game files in launcher settings."
-            };
-
-            dialog.showMessageBox(warn);
-          }
-          else
-          {
-            global.mainWindow.webContents.send('setPlayButtonState', false);
-            global.mainWindow.webContents.send('setPlayButtonText', 'Play');
-          }
-
-          global.mainWindow.webContents.send('setVerifyButtonState', false);
-          global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
-        });
-
-        break;
+          fs.rmSync(first_cache,  { recursive: true });
+          fs.rmSync(second_cache, { recursive: true });
       }
-      case "linux":
+      catch (error)
       {
-        exec(`WINEPREFIX="/home/$(whoami)/.config/GameFreedom/" WINEARCH=win64 wine "${ exePath }"`, function(error, data)
+        log.error(error);
+      }
+
+      //! CHECK FOR THE LATEST PATCH FOR THAT SPECIFIC SERVER/REALM
+      global.mainWindow.webContents.send('SetPlayButtonState', true);
+      global.mainWindow.webContents.send('SetPlayButtonText', 'Running');
+      global.mainWindow.webContents.send('SetValidateButtonState', true);
+      global.mainWindow.webContents.send('SetValidateButtonText', '<i class="fa fa-warning" aria-hidden="true"></i> Game is running');
+
+      const md5Passed = await update.checkGameFilesSize(rootPath, globals.cataDownload);
+
+      if (!md5Passed)
+      {
+          global.mainWindow.webContents.send('integrity_failed');
+          return;
+      }
+
+      // Check config.wtf in ./WTF/Config.wtf for locale. Ensure it's enUS
+      let configWTF = rootPath + path.sep + "WTF" + path.sep + "Config.wtf";
+      if (fs.existsSync(configWTF))
+      {
+          let configWTFData = fs.readFileSync(configWTF, 'utf8');
+
+          // Find 'SET locale "enUS"'
+
+          let localeRegex = /SET locale "(.*)"/;
+          let localeMatch = configWTFData.match(localeRegex);
+
+          // Find "set realmlist"
+          let realmlistRegex = /SET realmlist "(.*)"/;
+
+          let realmlistMatch = configWTFData.match(realmlistRegex);
+
+          // Find "set patchlist"
+          let patchlistRegex = /SET patchlist "(.*)"/;
+          let patchlistMatch = configWTFData.match(patchlistRegex);
+          let configChanged = false;
+
+          if (localeMatch)
+          {
+              // Set to enUS
+              if (localeMatch[1] !== 'enUS')
+              {
+                  configWTFData = configWTFData.replace(localeRegex, 'SET locale "enUS"');
+                  configChanged = true;
+              }
+          }
+
+          if (realmlistMatch)
+          {
+              if (realmlistMatch[1] !== 'logon.gamefreedom.org:3725')
+              {
+                  configWTFData = configWTFData.replace(realmlistRegex, 'SET realmlist "logon.gamefreedom.org:3725"');
+                  configChanged = true;
+              }
+          }
+
+          if (patchlistMatch)
+          {
+              if (patchlistMatch[1] !== '127.0.0.1')
+              {
+                  configWTFData = configWTFData.replace(patchlistRegex, 'SET patchlist "127.0.0.1"');
+                  configChanged = true;
+              }
+          }
+
+          if (configChanged)
+              fs.writeFileSync(configWTF, configWTFData);
+      }
+
+      switch (process.platform)
+      {
+        case "win32":
         {
+          exec(`set __COMPAT_LAYER=WIN7RTM && "${ exePath }"`, function(error, data)
+          {
             if (error)
             {
-              const warn = {
-                  type: 'warning',
-                  title: 'Integrity Failed',
-                  message: "Please verify integrity of your game files launcher settings."
-              };
-
-              dialog.showMessageBox(warn);
+              global.mainWindow.webContents.send('integrity_failed');
             }
             else
             {
-              global.mainWindow.webContents.send('setPlayButtonState', false);
-              global.mainWindow.webContents.send('setPlayButtonText', 'Play');
+              global.mainWindow.webContents.send('SetPlayButtonState', false);
+              global.mainWindow.webContents.send('SetPlayButtonText', 'Play');
             }
 
-            global.mainWindow.webContents.send('setVerifyButtonState', false);
-            global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
-        });
+            global.mainWindow.webContents.send('SetValidateButtonState', false);
+            global.mainWindow.webContents.send('SetValidateButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+          });
 
-        break;
-      }
-      default:
-      {
-        exec(execPath, function(error, data)
+          break;
+        }
+        case "linux":
         {
-          if (error)
-            throw new Error(error);
+          exec(`WINEPREFIX="/home/$(whoami)/.config/GameFreedom/" WINEARCH=win64 wine "${ exePath }"`, function(error, data)
+          {
+              if (error)
+              {
+                  global.mainWindow.webContents.send('integrity_failed');
+              }
+              else
+              {
+                global.mainWindow.webContents.send('SetPlayButtonState', false);
+                global.mainWindow.webContents.send('SetPlayButtonText', 'Play');
+              }
 
-        });
+              global.mainWindow.webContents.send('SetValidateButtonState', false);
+              global.mainWindow.webContents.send('SetValidateButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+          });
 
-        break;
+          break;
+        }
+        default:
+        {
+          exec(execPath, function(error, data)
+          {
+            if (error)
+              throw new Error(error);
+
+          });
+
+          break;
+        }
       }
     }
-  }
-  catch(error)
-  {
-    global.mainWindow.webContents.send('setPlayButtonState', true);
-    global.mainWindow.webContents.send('setVerifyButtonState', true);
-    log.error(error);
-  }
+    catch(error)
+    {
+      global.mainWindow.webContents.send('SetPlayButtonState', true);
+      global.mainWindow.webContents.send('SetValidateButtonState', true);
+      log.error(error);
+    }
 });
 
 autoUpdater.on('update-available', function()
 {
-  global.mainWindow.webContents.send('update_available');
-  globals.launcherUpdateFound = true;
+    console.log("Event: update-available");
+    global.mainWindow.webContents.send('update_available');
+    globals.launcherUpdateFound = true;
 });
 
 autoUpdater.on('update-downloaded', function()
 {
-  global.mainWindow.webContents.send('update_downloaded');
+    console.log("Event: update-downloaded");
+    global.mainWindow.webContents.send('update_downloaded');
 });
 
 ipcMain.on('restart_app', function()
 {
-  autoUpdater.quitAndInstall();
+    console.log("Event: restart_app");
+    autoUpdater.quitAndInstall();
 });
 
 ipcMain.on('quit', function(event)
 {
-  settings.save(app.getPath('userData'));
-  app.quit();
+    console.log("Event: quit");
+    settings.save(app.getPath('userData'));
+    app.quit();
 })
 
 ipcMain.on('minimize', function(event)
 {
+  console.log("Event: minimize");
   BrowserWindow.getFocusedWindow().minimize();
+})
+
+ipcMain.on('maximize', function(event)
+{
+  console.log("Event: maximize");
+
+  if (BrowserWindow.getFocusedWindow().isMaximized())
+      BrowserWindow.getFocusedWindow().restore();
+  else
+      BrowserWindow.getFocusedWindow().maximize();
 })
 
 ipcMain.on('app_version', function(event)
@@ -503,91 +458,94 @@ ipcMain.on('app_version', function(event)
   global.appVersion = app.getVersion();
 });
 
-ipcMain.on('selectDirectory', async function(event)
+ipcMain.on('SelectDirectory', async function(event)
 {
-  let dir = await dialog.showOpenDialog(global.mainWindow, {
-    properties: ['openDirectory']
-  });
+    console.log("Event: SelectDirectory");
 
-  if (globals.updateInProgress == true)
-  {
-    const warn = {
-        type: 'warning',
-        title: 'Please wait',
-        message: "There's already a download in progress."
-    };
+    let dir = await dialog.showOpenDialog(global.mainWindow, {
+        properties: ['openDirectory']
+      });
 
-    dialog.showMessageBox(warn);
-    return;
-  }
+      if (globals.updateInProgress == true || globals.validationInProgress == true)
+      {
+        const warn = {
+            type: 'warning',
+            title: 'Please wait',
+            message: "There's already a download or validation in progress."
+        };
 
-  if (dir && dir.filePaths.length > 0)
-  {
-    if (dir.filePaths[0] == selectedFolder())
-    {
-        log.write('User tried to set game location to the same path, ignore it.');
+        dialog.showMessageBox(warn);
         return;
-    }
+      }
 
-    try
-    {
-        global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
-        global.mainWindow.webContents.send('setVerifyButtonState', false);
-        global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+      if (dir && dir.filePaths.length > 0)
+      {
+        if (dir.filePaths[0] == SelectedFolder())
+        {
+            log.write('User tried to set game location to the same path, ignore it.');
+            return;
+        }
 
-        global.userSettings.gameLocation = dir.filePaths[0];
-        settings.save(app.getPath('userData'));
-    }
-    catch(err)
-    {
-      log.error(err);
-    }
-  }
-  else
-  {
-    const warn = {
-        type: 'warning',
-        title: 'Warning',
-        message: "Something went wrong with choosing your new game path, please try again."
-    };
+        try
+        {
+            global.mainWindow.webContents.send('SetGameLocation', path.normalize(dir.filePaths[0]));
+            global.mainWindow.webContents.send('SetValidateButtonState', false);
+            global.mainWindow.webContents.send('SetValidateButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
 
-    dialog.showMessageBox(warn);
-  }
+            global.userSettings.gameLocation = dir.filePaths[0];
+            settings.save(app.getPath('userData'));
+        }
+        catch(err)
+        {
+          log.error(err);
+        }
+      }
+      else
+      {
+        const warn = {
+            type: 'warning',
+            title: 'Warning',
+            message: "Something went wrong with choosing your new game path, please try again."
+        };
+
+        dialog.showMessageBox(warn);
+      }
 });
 
-ipcMain.on('firstSelectDirectory', async function(event)
+ipcMain.on('SelectDirectory_First', async function(event)
 {
-  let dir = await dialog.showOpenDialog(global.mainWindow, {
-    properties: ['openDirectory']
-  });
+    console.log("Event: SelectDirectory_First");
 
-  if (dir && dir.filePaths.length > 0)
-  {
-    try
-    {
-      global.mainWindow.webContents.send('setGameLocation', dir.filePaths[0]);
-      global.mainWindow.webContents.send('closeFirstTimeSetup');
+    let dir = await dialog.showOpenDialog(global.mainWindow, {
+        properties: ['openDirectory']
+      });
 
-      global.userSettings.gameLocation = dir.filePaths[0];
-      settings.save(app.getPath('userData'));
+      if (dir && dir.filePaths.length > 0)
+      {
+        try
+        {
+          global.mainWindow.webContents.send('SetGameLocation', path.normalize(dir.filePaths[0]));
+          global.mainWindow.webContents.send('CloseFirstTimeSetup');
 
-      global.mainWindow.webContents.send('setPlayButtonState', false);
-      global.mainWindow.webContents.send('setVerifyButtonState', false);
-      global.mainWindow.webContents.send('setVerifyButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
-    }
-    catch(err)
-    {
-      log.error(err);
-    }
-  }
-  else
-  {
-    const warn = {
-        type: 'warning',
-        title: 'Warning',
-        message: "Something went wrong with choosing your game path, please try again."
-    };
+          global.userSettings.gameLocation = dir.filePaths[0];
+          settings.save(app.getPath('userData'));
 
-    dialog.showMessageBox(warn);
-  }
+          global.mainWindow.webContents.send('SetPlayButtonState', false);
+          global.mainWindow.webContents.send('SetPlayButtonText', 'Install');
+        }
+        catch(err)
+        {
+          log.error(err);
+        }
+      }
+      else
+      {
+        const warn = {
+            type: 'warning',
+            title: 'Warning',
+            message: "Something went wrong with choosing your game path, please try again."
+        };
+
+        dialog.showMessageBox(warn);
+      }
 });

@@ -1,285 +1,309 @@
-const { ipcRenderer, ipcMain, dialog  } = require('electron');
-const open_file_explorer                = require('open-file-explorer');
-const app_data_path                     = require('appdata-path');
-const electronSquirrelStartup           = require('electron-squirrel-startup');
+const { ipcRenderer }               = require('electron');
 
-const playButton                 = document.querySelector("#playButton");
-const verifyButton               = document.querySelector("#verifyButton");
-const dropdownOptions            = document.querySelectorAll('.dropup-content a');
-const downloadBarCurrent         = document.querySelector(".download_progress_current");
-const downloadBarOverall         = document.querySelector(".download_progress_overall");
-const progressBarCurrent         = document.querySelector(".progress-bar-current");
-const progressBarOverall         = document.querySelector(".progress-bar-overall");
-const gameLocationText           = document.querySelector("#gameLocationText");
-const settings_modal             = document.querySelector("app-settings");
-const first_time_setup           = document.querySelector("app-install");
-const firstDirectoryButton       = document.querySelector("#firstSelectDirectory");
-const directoryButton            = document.querySelector("#selectDirectory");
-const settingsButton             = document.querySelector("#settingsButton");
-const settingsSave               = document.querySelector("#settingsSave");
-const settingsExit               = document.querySelector("#settingsExit");
-const minimizeButton             = document.querySelector("#minimizeButton");
-const exitButton                 = document.querySelector("#exitButton");
-const version                    = document.getElementById('version');
-const updateNotification         = document.querySelector("app-notification");
-const updateRestartButton        = document.querySelector('#updateRestartButton');
+// 1. Buttons
+const Button_Play                   = document.querySelector("#Button_Play");
+const Button_Validate               = document.querySelector("#Button_Validate");
+const Button_SelectDirectory        = document.querySelector("#Button_SelectDirectory");
+const Button_SelectDirectory_First  = document.querySelector("#Button_SelectDirectory_First");
+const Button_Settings               = document.querySelector("#Button_Settings");
+const Button_Settings_Exit          = document.querySelector("#Button_Settings_Exit");
+const Button_Settings_Save          = document.querySelector("#Button_Settings_Save");
+const Button_Minimize               = document.querySelector("#Button_Minimize");
+const Button_Maximize               = document.querySelector("#Button_Maximize");
+const Button_Exit                   = document.querySelector("#Button_Exit");
+const Button_Restart                = document.querySelector("#Button_Restart");
+const Button_Integrity              = document.querySelector("#Button_Integrity");
 
-//ipcRenderer.showErrorBox = function(title, content) {
-//    console.log(`${title}\n${content}`);
-//};
+// 2. Progress Bars
+const ProgressBar_Overall                = document.querySelector("#ProgressBar_Overall");
+const ProgressBar_Overall_Data_Or_Value  = document.querySelector("#ProgressBar_Overall_Data_Or_Value");
+const ProgressBar_Current                = document.querySelector("#ProgressBar_Current");
+const ProgressBar_Current_Data_Or_Value  = document.querySelector("#ProgressBar_Current_Data_Or_Value");
 
+// 3. Modals
+const Modal_Settings                = document.querySelector("app-settings");
+const Modal_Notification_Update     = document.querySelector("app-notification-update");
+const Modal_Notification_Integrity  = document.querySelector("app-notification-integrity-failed");
+const Modal_FirstTimeSetup          = document.querySelector("app-install");
 
-var webview = document.querySelector('webview');
-if (webview)
+// 4. Misc
+const GameLocationText              = document.querySelector("#GameLocationText");
+const LauncherVersion               = document.querySelector("#LauncherVersion");
+
+// 5. Messages
+const Message_Update                = document.querySelector("#MessageUpdate");
+const Message_Integrity             = document.querySelector("#MessageIntegrityFailed");
+
+// 1. Buttons
+// Button_Play
+Button_Play.addEventListener('click', function(event)
 {
-    webview.addEventListener('dom-ready', function()
+    Button_Play.disabled = true;
+
+    if (Button_Play.textContent != "Play")
     {
-        webview.insertCSS('app-navigation { padding-top: 35px; }')
-    });
-}
-
-ipcRenderer.on('showFirstTimeSetup', function(event)
-{
-    show_first_time_setup(true);
-})
-
-ipcRenderer.on('closeFirstTimeSetup', function(event)
-{
-    show_first_time_setup(false);
-})
-
-ipcRenderer.on('setPlayButtonState', function(event, state)
-{
-    if (playButton)
-        playButton.disabled = state;
-})
-
-ipcRenderer.on('setPlayButtonText', function(event, string)
-{
-    if (playButton)
-        playButton.textContent = string;
-})
-
-ipcRenderer.on('setProgressTextCurrent', function(event, string)
-{
-    if (progressBarCurrent)
-        progressBarCurrent.setAttribute("dataLabel", string);
-})
-
-ipcRenderer.on('setProgressTextOverall', function(event, string)
-{
-    if (progressBarOverall)
-        progressBarOverall.setAttribute("dataLabel", string);
-})
-
-ipcRenderer.on('setProgressBarCurrentPercent', function(event, percent)
-{
-    if (percent >= 0 && percent <= 100)
-        progressBarCurrent.value = percent;
-})
-
-ipcRenderer.on('setProgressBarOverallPercent', function(event, percent)
-{
-    if (percent >= 0 && percent <= 100)
-        progressBarOverall.value = percent;
-})
-
-ipcRenderer.on('setGameLocation', function(event, string)
-{
-    console.log('Updating game location to: ' + string);
-    gameLocationText.value           = string;
-    global.userSettings.gameLocation = string;
-})
-
-ipcRenderer.on('hideProgressBar', function(event, bool)
-{
-    progressBarCurrent.hidden = bool;
-    progressBarOverall.hidden = bool;
-})
-
-playButton.addEventListener('click', function(event)
-{
-    playButton.disabled = true;
-    console.log("Clicked on update/download button");
-    if (playButton.textContent != "Play")
-    {
-        downloadBarCurrent.hidden     = true;
-        downloadBarOverall.hidden     = false;
-        playButton.textContent = "Running";
-
-        progressBarCurrent.removeAttribute('hidden');
-        progressBarOverall.removeAttribute('hidden');
-        ipcRenderer.send('beginDownload');
-        console.log("Began download");
+        Button_Play.textContent       = "Running";
+        ipcRenderer.send('BeginDownloadOrValidate');
     }
     else
     {
-        ipcRenderer.send('launchGame');
+        ipcRenderer.send('LaunchGame');
     }
-})
+});
 
-firstDirectoryButton.addEventListener('click', function()
+ipcRenderer.on('SetPlayButtonState', function(event, state)
 {
-    ipcRenderer.send('firstSelectDirectory');
+    Button_Play.disabled = state;
+});
 
-    // set button to download
-    playButton.textContent = "Download";
-})
-
-directoryButton.addEventListener('click', function()
+ipcRenderer.on('SetPlayButtonText', function(event, string)
 {
-    ipcRenderer.send('selectDirectory');
-})
+    Button_Play.textContent = string;
+});
 
-minimizeButton.addEventListener('click', function()
+// Button_Validate
+Button_Validate.addEventListener('click', function()
+{
+    Button_Play.textContent    = "Running";
+    Button_Play.disabled       = true;
+    Button_Validate.disabled   = true;
+    ProgressBar_Overall.hidden = false;
+    ProgressBar_Current.hidden = false;
+
+    ipcRenderer.send('BeginDownloadOrValidate');
+});
+
+ipcRenderer.on('SetValidateButtonState', function(event, state)
+{
+    Button_Validate.disabled = state;
+});
+
+ipcRenderer.on('SetValidateButtonText', function(event, string)
+{
+    Button_Validate.innerHTML = string;
+});
+
+// Button_SelectDirectory
+Button_SelectDirectory.addEventListener('click', function()
+{
+    ipcRenderer.send('SelectDirectory');
+});
+
+// Button_SelectDirectory_First
+Button_SelectDirectory_First.addEventListener('click', function()
+{
+    ipcRenderer.send('SelectDirectory_First');
+});
+
+function Show_Modal_FirstTimeSetup(show = false)
+{
+    if (!Modal_FirstTimeSetup)
+        return;
+
+    var exists = Modal_FirstTimeSetup.classList.contains('show');
+
+    if (show)
+    {
+        if (!exists)
+            Modal_FirstTimeSetup.classList.add('show');
+    }
+    else
+    {
+        if (exists)
+            Modal_FirstTimeSetup.classList.remove('show');
+    }
+}
+
+ipcRenderer.on('ShowFirstTimeSetup', function(event)
+{
+    Show_Modal_FirstTimeSetup(true);
+});
+
+ipcRenderer.on('CloseFirstTimeSetup', function(event)
+{
+    Show_Modal_FirstTimeSetup(false);
+});
+
+// Button_Settings
+Button_Settings.addEventListener('click', function()
+{
+    Show_Modal_Settings(true);
+});
+
+// Button_Settings_Exit
+// TODO: Check and clear unsaved picks in case they persist upon next reopening of settings modal
+Button_Settings_Exit.addEventListener('click', function()
+{
+    Show_Modal_Settings(false);
+});
+
+// Button_Settings_Save
+Button_Settings_Save.addEventListener('click', function()
+{
+    Show_Modal_Settings(false);
+});
+
+// Button_Minimize
+Button_Minimize.addEventListener('click', function()
 {
     ipcRenderer.send('minimize');
-})
+});
 
-exitButton.addEventListener('click', function()
+// Button_Maximize
+Button_Maximize.addEventListener('click', function()
+{
+    ipcRenderer.send('maximize');
+});
+
+// Button_Exit
+Button_Exit.addEventListener('click', function()
 {
     ipcRenderer.send('quit');
-})
+});
 
-verifyButton.addEventListener('click', function()
+// Button_Restart
+Button_Restart.addEventListener('click', function()
 {
-    playButton.disabled    = true;
-    verifyButton.disabled  = true;
-    downloadBarCurrent.hidden     = false;
-    downloadBarOverall.hidden     = false;
-    playButton.textContent = "Running";
+    ipcRenderer.send('restart_app');
+});
 
-    progressBarCurrent.removeAttribute('hidden');
-    progressBarOverall.removeAttribute('hidden');
-    ipcRenderer.send('beginVerify');
-})
-
-ipcRenderer.on('setVerifyButtonState', function(event, state)
+// Button_Integrity
+Button_Integrity.addEventListener('click', function()
 {
-    if (verifyButton)
-        verifyButton.disabled = state;
-})
+    Show_Notification_Integrity(false);
+    ipcRenderer.send('BeginDownloadOrValidate');
+});
 
-ipcRenderer.on('setVerifyButtonText', function(event, string)
+// 2. Progress Bars
+// ProgressBar_Overall_Data_Or_Value
+ipcRenderer.on('SetDataProgressBar_Overall', function(event, percent, data, hide)
 {
-    if (verifyButton)
-        verifyButton.innerHTML = string;
-})
+    if (percent >= 0 && percent <= 100)
+        ProgressBar_Overall_Data_Or_Value.value = percent;
 
-function show_modal_settings(show = false)
+    if (data)
+        ProgressBar_Overall_Data_Or_Value.setAttribute("dataLabel", data);
+
+    ProgressBar_Overall.hidden = hide;
+});
+
+// ProgressBar_Current_Data_Or_Value
+ipcRenderer.on('SetDataProgressBar_Current', function(event, percent, data, hide)
 {
-    console.log("Clicked on settings button");
+    if (percent >= 0 && percent <= 100)
+        ProgressBar_Current_Data_Or_Value.value = percent;
 
-    if (!settings_modal)
+    if (data != '')
+        ProgressBar_Current_Data_Or_Value.setAttribute("dataLabel", data);
+
+    ProgressBar_Current.hidden = hide;
+});
+
+// 3. Modals
+// Modal_Settings
+function Show_Modal_Settings(show = false)
+{
+    if (!Modal_Settings)
         return;
 
-    var exists = settings_modal.classList.contains('show');
+    var exists = Modal_Settings.classList.contains('show');
 
     if (show)
     {
         if (!exists)
-            settings_modal.classList.add('show');
+            Modal_Settings.classList.add('show');
     }
     else
     {
         if (exists)
-            settings_modal.classList.remove('show');
+            Modal_Settings.classList.remove('show');
     }
 }
 
-function show_first_time_setup(show = false)
+// Modal_Notification_Update
+function Show_Notification_Update(show = false)
 {
-    if (!first_time_setup)
+    if (!Modal_Notification_Update)
         return;
 
-    var exists = first_time_setup.classList.contains('show');
+    var exists = Modal_Notification_Update.classList.contains('show');
 
     if (show)
     {
         if (!exists)
-            first_time_setup.classList.add('show');
+            Modal_Notification_Update.classList.add('show');
     }
     else
     {
         if (exists)
-            first_time_setup.classList.remove('show');
+            Modal_Notification_Update.classList.remove('show');
     }
 }
 
-function show_notification(show = false)
+// Modal_Notification_Integrity
+function Show_Notification_Integrity(show = false)
 {
-    console.error("0");
-
-    if (!updateNotification)
+    if (!Modal_Notification_Integrity)
         return;
-        console.error("1");
 
-    var exists = updateNotification.classList.contains('show');
+    var exists = Modal_Notification_Integrity.classList.contains('show');
 
     if (show)
     {
         if (!exists)
-            updateNotification.classList.add('show');
+            Modal_Notification_Integrity.classList.add('show');
     }
     else
     {
         if (exists)
-            updateNotification.classList.remove('show');
+            Modal_Notification_Integrity.classList.remove('show');
     }
 }
 
-settingsButton.addEventListener('click', function()
+// 4. Misc
+// GameLocationText
+ipcRenderer.on('SetGameLocation', function(event, string)
 {
-    show_modal_settings(true);
-})
+    GameLocationText.value           = string;
+    global.userSettings.gameLocation = string;
+});
 
-// TODO: Check and clear unsaved picks in case they persist upon next reopening of settings modal
-settingsExit.addEventListener('click', function()
-{
-    show_modal_settings(false);
-})
-
-settingsSave.addEventListener('click', function()
-{
-    show_modal_settings(false);
-})
-
-ipcRenderer.send('app_version');
-
+// Version
 ipcRenderer.on('app_version', function(event, arg)
 {
   ipcRenderer.removeAllListeners('app_version');
-  version.innerText = 'Version: ' + arg.version;
+  LauncherVersion.innerText = 'Version: ' + arg.version;
 });
 
-updateRestartButton.addEventListener('click', function()
-{
-    ipcRenderer.send('restart_app');
-})
+ipcRenderer.send('app_version');
 
 ipcRenderer.on('update_available', function()
 {
     ipcRenderer.removeAllListeners('update_available');
-    message.innerText = 'A launcher update is available. Downloading now...';
-    show_notification(true);
+    Message_Update.innerText = 'A launcher update is available. Downloading now...';
+    Show_Notification_Update(true);
 });
 
 ipcRenderer.on('update_downloaded', function()
 {
     ipcRenderer.removeAllListeners('update_downloaded');
-    message.innerText = 'Update downloaded, and needs to be installed. Update?';
-    updateRestartButton.removeAttribute('hidden');
-    show_notification(true);
+    Message_Update.innerText = 'Update downloaded, and needs to be installed. Update?';
+    Button_Restart.removeAttribute('hidden');
+    Show_Notification_Update(true);
 });
 
-ipcRenderer.on('hideProgressBarCurrent', function(event, bool)
+ipcRenderer.on('integrity_failed', function()
 {
-    downloadBarCurrent.hidden = bool;
+    Message_Integrity.innerText = 'The integrity check of your game files has failed. You need to validate game files to repair them.';
+    Show_Notification_Integrity(true);
 });
 
-ipcRenderer.on('hideProgressBarOverall', function(event, bool)
-{
-    downloadBarOverall.hidden = bool;
-});
-
-dropdownOptions.forEach(option => option.addEventListener('click', handleOptionSelected));
+// webview
+// var webview = document.querySelector('webview');
+// if (webview)
+// {
+//     webview.addEventListener('dom-ready', function()
+//     {
+//         webview.insertCSS('app-navigation { padding-top: 35px; }')
+//     });
+// }

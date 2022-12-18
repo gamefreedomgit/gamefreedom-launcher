@@ -130,56 +130,6 @@ video {
      object-position: center;
 }
 
-#updateNotification.active
-{
-  visibility: visible;
-  opacity: 1;
-  transition: 0.2s;
-}
-
-#updateNotification {
-  position: fixed;
-  top: 10%;
-  left: 20%;
-  width: 30vw;
-  padding: 20px;
-  transform: translate(-50%, -20%);
-  border-radius: 5px;
-  background: rgba(0,0,0,0.4);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  color: rgb(255,255,255);
-
-  visibility: hidden;
-  opacity: 0;
-  transition: 0.2s;
-  z-index: 9999;
-}
-
-#firstTimeSetup.active
-{
-  visibility: visible;
-  opacity: 1;
-  transition: 0.2s;
-}
-
-#firstTimeSetup
-{
-  position:fixed;
-  top: 50%;
-  height:50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 30vw;
-  padding: 30px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  background: rgba(0,0,0,0.4);
-  color: rgb(255,255,255);
-
-  visibility: hidden;
-  opacity: 0;
-  transition: 0.2s;
-}
-
 .fileUpload {
   border: 1px solid rgb(255, 255, 255);
   border-radius: 3px;
@@ -341,7 +291,8 @@ app-content {
 
 app-settings,
 app-install,
-app-notification {
+app-notification-update,
+app-notification-integrity-failed {
   display: none;
   position: fixed;
   z-index: 9999;
@@ -352,17 +303,20 @@ app-notification {
   overflow: auto;
   background-color: rgba(0,0,0,0.75);
   color: rgba(255, 255, 255, 0.87);
+  font-size: 12px;
 }
 
 app-settings.show,
 app-install.show,
-app-notification.show {
+app-notification-update.show,
+app-notification-integrity-failed.show {
   display: flex;
 }
 
 app-settings > div,
 app-install > div,
-app-notification > div {
+app-notification-update > div,
+app-notification-integrity-failed > div {
   width: 100%;
   max-width: 50vw;
   margin: auto;
@@ -375,13 +329,14 @@ app-notification > div {
 
 app-settings hr,
 app-install hr,
-app-notification hr {
+app-notification-update hr,
+app-notification-integrity-failed hr {
   height: 1px;
   background-color: #9a9a9a;
   border: none;
 }
 
-app-settings #gameLocationText {
+app-settings #GameLocationText {
   outline: none;
   font-size: 8px;
   min-width: 300px;
@@ -389,7 +344,8 @@ app-settings #gameLocationText {
 
 app-settings section,
 app-install section,
-app-notification section {
+app-notification-update section,
+app-notification-integrity-failed section {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -420,15 +376,17 @@ app-settings input:read-only {
 
 app-settings h1,
 app-install h1,
-app-notification h1 {
+app-notification-update h1,
+app-notification-integrity-failed h1 {
   margin: 0;
   padding: 0;
-  font-size: 20px;
+  font-size: 14px;
 }
 
 app-settings ul,
 app-install ul,
-app-notification ul {
+app-notification-update ul,
+app-notification-integrity-failed ul {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -436,20 +394,23 @@ app-notification ul {
 
 app-settings ul li,
 app-install ul li,
-app-notification ul li {
+app-notification-update ul li,
+app-notification-integrity-failed ul li {
   display: flex;
   align-items: center;
 }
 
 app-settings ul li + li,
 app-install ul li + li,
-app-notification ul li + li {
+app-notification-update ul li + li,
+app-notification-integrity-failed ul li + li {
   margin-top: 10px;
 }
 
 app-settings footer,
 app-install footer,
-app-notification footer {
+app-notification-update footer,
+app-notification-integrity-failed footer {
   margin-top: 20px;
   padding-top: 10px;
   border-top: 1px solid #343747;
@@ -458,7 +419,8 @@ app-notification footer {
 
 app-settings .button,
 app-install .button,
-app-notification .button {
+app-notification-update .button,
+app-notification-integrity-failed .button {
   cursor: pointer;
   border: none;
   outline: none;
@@ -472,40 +434,43 @@ app-notification .button {
 
 app-settings .button:disabled,
 app-install .button:disabled,
-app-notification .button:disabled {
+app-notification-update .button:disabled,
+app-notification-integrity-failed .button:disabled {
   background-color: #858585;
   border: 0 !important;
   cursor: not-allowed;
 
 }
 
-
-
 app-settings .exit,
 app-install .exit,
-app-notification .exit {
+app-notification-update .exit,
+app-notification-integrity-failed .exit {
   background-color: transparent;
 }
 
 app-settings .button:hover,
 app-install .button:hover,
-app-notification .button:hover {
+app-notification-update .button:hover,
+app-notification-integrity-failed .button:hover {
     border: 2px solid #e54c4c;
 }
 
 app-settings .button.exit:hover,
 app-install .button.exit:hover,
-app-notification .button.exit:hover {
+app-notification-update .button.exit:hover,
+app-notification-integrity-failed .button.exit:hover {
   background-color: rgba(0, 0, 0, 0.2);
 }
 
 app-settings .button.edit,
 app-install .button.edit,
-app-notification .button.edit {
+app-notification-update .button.edit,
+app-notification-integrity-failed .button.edit {
   font-size: 15px;
 }
 
-app-settings #version {
+app-settings #LauncherVersion {
   font-size: 13px;
   float: right;
   margin-top: 10px;
@@ -513,7 +478,8 @@ app-settings #version {
 
 app-settings section i,
 app-install section i,
-app-notification section i {
+app-notification-update section i,
+app-notification-integrity-failed section i {
   margin-left: 5px;
   font-size: 21px !important;
   cursor: pointer;
@@ -521,13 +487,15 @@ app-notification section i {
 
 app-settings section i:hover,
 app-install section i:hover,
-app-notification section i:hover {
+app-notification-update section i:hover,
+app-notification-integrity-failed section i:hover {
   color: #cacaca;
 }
 
 app-settings > div > span,
 app-install > div > span,
-app-notification > div > span {
+app-notification-update > div > span,
+app-notification-integrity-failed > div > span {
   margin-left: 7px;
   font-size: 17px;
 }
