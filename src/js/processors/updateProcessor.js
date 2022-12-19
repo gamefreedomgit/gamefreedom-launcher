@@ -45,6 +45,8 @@ module.exports = {
 
             if (global.userSettings.gameValidated == true)
             {
+                global.mainWindow.webContents.send('SetDataProgressBar', 0, '', true);
+
                 global.mainWindow.webContents.send('SetPlayButtonState', false);
                 global.mainWindow.webContents.send('SetPlayButtonText', 'Play');
 
@@ -68,7 +70,7 @@ module.exports = {
         global.updateLoopId = setInterval(function()
         {
             module.exports.checkForUpdates();
-        }, 60000);
+        }, 5000);
 
         global.launcherUpdateLoop = setInterval(function()
         {
@@ -85,7 +87,7 @@ module.exports = {
                     }
                 });
             }
-        }, 10000);
+        }, 5000);
 
         this.checkForUpdates();
     },
@@ -249,11 +251,7 @@ module.exports = {
                     if (globals.updateInProgress == true)
                         global.mainWindow.webContents.send('SetDataProgressBar', 100, 'File validation has been completed. Any missing files will be downloaded in a moment.', false);
                     else
-                        global.mainWindow.webContents.send('SetDataProgressBar', 0, '', true);
-
-                    global.mainWindow.webContents.send('SetValidateButtonState', false);
-                    global.mainWindow.webContents.send('SetValidateButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
-
+                        global.mainWindow.webContents.send('SetDataProgressBar', 100, 'File validation has been completed. Please wait.', false);
                 }
             }
         }

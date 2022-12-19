@@ -172,6 +172,9 @@ function startUpdateLoop()
     {
         clearInterval(global.updateLoop);
         global.updateLoop = null;
+
+        if (global.ongoingDownloads != 0)
+            global.ongoingDownloads.length = 0;
     }
 
     global.updateLoop = setInterval(() =>
