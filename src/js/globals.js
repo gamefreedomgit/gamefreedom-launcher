@@ -2,7 +2,6 @@ const globals = {
     initialized:          false,
     serverVersion:        0,
     updateInProgress:     false,
-    validationInProgress: false,
     launcherUpdateFound:  false,
 
     launcherInfo: 'https://cdn-1.gamefreedom.org/version.json',

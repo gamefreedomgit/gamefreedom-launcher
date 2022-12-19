@@ -166,8 +166,6 @@ global.updateLoop         = null;
 
 function startUpdateLoop()
 {
-    let initialize = false;
-
     if (global.updateLoop != null)
     {
         clearInterval(global.updateLoop);
@@ -182,15 +180,10 @@ function startUpdateLoop()
         if (!IsSelectedGameValidated())
            return;
 
-        if (!initialize)
+        global.queuedDownloads.forEach(download =>
         {
-            global.queuedDownloads.forEach(download =>
-            {
-                update.downloadFile(download.url, download.path);
-            });
-
-            initialize = true;
-        }
+            update.downloadFile(download.url, download.path);
+        });
 
         // Calculate overall progress.
         let overallDone     = 0;

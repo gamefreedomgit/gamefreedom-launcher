@@ -221,14 +221,20 @@ module.exports = {
 
                         // Compare the actual and expected hashes
                         if (actualHash !== expectedHash)
+                        {
                             console.log(`File ${filePath} is outdated, expected hash: ${expectedHash}, actual hash: ${actualHash}`);
 
+                            // Download the updated file from the given URL
+                            global.queuedDownloads.push({url: fileUrl, path: relativePath})
+                        }
                         // Compare the actual and expected sizes
                         if (stats.size != expectedSize)
+                        {
                             console.log(`File ${filePath} is outdated, expected size: ${expectedSize}, actual size: ${stats.size}`);
 
-                        // Download the updated file from the given URL
-                        global.queuedDownloads.push({url: fileUrl, path: relativePath});
+                            // Download the updated file from the given URL
+                            global.queuedDownloads.push({url: fileUrl, path: relativePath})
+                        }
                     });
                 }
                 else
