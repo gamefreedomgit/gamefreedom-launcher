@@ -201,14 +201,19 @@ function startUpdateLoop()
 
         let overallProgress = (overallTotal > 0 && overallDone > 0) ? Math.ceil(overallDone / (overallTotal / 100)) : 0;
 
-        const etaDate   = addSeconds(new Date(), overallEta);
-        global.mainWindow.webContents.send('SetDataProgressBar', (overallProgress > 100) ? 100 : overallProgress, `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate, 'MB')}/s) ETA: ${distanceInWordsToNow(etaDate)}`, false);
+        if (global.ongoingDownloads.length != 0)
+        {
+            const etaDate   = addSeconds(new Date(), overallEta);
+            global.mainWindow.webContents.send('SetDataProgressBar', (overallProgress > 100) ? 100 : overallProgress, `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate, 'MB')}/s) ETA: ${distanceInWordsToNow(etaDate)}`, false);
+        }
 
         if (overallProgress >= 100)
         {
             global.ongoingDownloads.length = 0;
 
             clearInterval(global.updateLoop);
+            global.updateLoop = null;
+
             globals.updateInProgress = false;
 
             global.mainWindow.webContents.send('SetDataProgressBar', 0, '', true);
@@ -219,7 +224,7 @@ function startUpdateLoop()
             global.mainWindow.webContents.send('SetValidateButtonState', false);
             global.mainWindow.webContents.send('SetValidateButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
         }
-    }, 1000);
+    }, 1500);
 }
 
 ipcMain.on('BeginDownloadOrValidate', async function(event)
