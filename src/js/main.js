@@ -46,7 +46,7 @@ function IsSelectedGameValidated()
 function initiate()
 {
   global.userData             = app.getPath('userData');
-  globals.launcherUpdateFound = false;
+  globals.initialized         = true;
 }
 
 function create_main_window()
@@ -166,75 +166,60 @@ global.updateLoop         = null;
 
 function startUpdateLoop()
 {
-    if (global.updateLoop == null || global.updateLoop._destroyed == true)
+    if (global.updateLoop != null)
     {
-        global.updateLoop = setInterval(() =>
-        {
-            for (let downloadNumber = 0; downloadNumber < global.queuedDownloads.length; downloadNumber++)
-            {
-                const download = global.queuedDownloads[downloadNumber];
-
-                if (download != null)
-                {
-                    globals.updateInProgress  = true;
-
-                    global.ongoingDownloads.push(global.queuedDownloads.shift());
-                    update.downloadFile(download.url, download.path);
-                }
-            }
-
-            // Calculate overall progress.
-            let overallDone     = 0;
-            let overallTotal    = 0;
-            let overallRate     = 0;
-            let overallEta      = 0;
-
-            for (const url in global.downloadProgresses)
-            {
-                if (global.downloadProgresses[url] != null)
-                {
-                    overallDone     += global.downloadProgresses[url].done;
-                    overallTotal    += global.downloadProgresses[url].total;
-                    overallRate     += global.downloadProgresses[url].rate;
-                    overallEta      += global.downloadProgresses[url].eta;
-                };
-            };
-
-            let overallProgress = (overallTotal > 0 && overallDone > 0) ? Math.ceil(overallDone / (overallTotal / 100)) : 0;
-
-            if (global.ongoingDownloads.length != 0 || global.queuedDownloads.length != 0)
-            {
-                const etaDate   = addSeconds(new Date(), overallEta);
-                global.mainWindow.webContents.send('SetDataProgressBar_Current', (overallProgress > 100) ? 100 : overallProgress, `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate, 'MB')}/s) ETA: ${distanceInWordsToNow(etaDate)}`, false);
-            }
-
-            if (global.ongoingDownloads.length == 0 && global.queuedDownloads.length == 0 && overallProgress >= 100)
-            {
-                global.mainWindow.webContents.send('SetDataProgressBar_Current', 0, '', true);
-
-                if (globals.validationInProgress == true)
-                    return;
-
-                globals.updateInProgress = false;
-
-                // All downloads are done clear and hide progress bar.
-                global.mainWindow.webContents.send('SetDataProgressBar_Overall', 0, '', true);
-
-                clearInterval(global.updateLoop);
-
-                if (IsSelectedGameValidated())
-                {
-                    settings.save(app.getPath('userData'));
-
-                    global.mainWindow.webContents.send('SetPlayButtonState', false);
-                    global.mainWindow.webContents.send('SetPlayButtonText', 'Play');
-
-                    global.mainWindow.webContents.send('SetValidateButtonState', false);
-                    global.mainWindow.webContents.send('SetValidateButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
-                }
-            }
-        }, 1000);
+        clearInterval(global.updateLoop);
+        global.updateLoop = null;
     }
+
+    global.updateLoop = setInterval(() =>
+    {
+        if (!IsSelectedGameValidated())
+           return;
+
+        global.queuedDownloads.forEach(download =>
+        {
+            update.downloadFile(download.url, download.path);
+        });
+
+        // Calculate overall progress.
+        let overallDone     = 0;
+        let overallTotal    = 0;
+        let overallRate     = 0;
+        let overallEta      = 0;
+
+        global.ongoingDownloads.forEach(download =>
+        {
+            if (global.downloadProgresses[download] != null)
+            {
+                overallDone     += global.downloadProgresses[download].done;
+                overallTotal    += global.downloadProgresses[download].total;
+                overallRate     += global.downloadProgresses[download].rate;
+                overallEta      += global.downloadProgresses[download].eta;
+            };
+        });
+
+        let overallProgress = (overallTotal > 0 && overallDone > 0) ? Math.ceil(overallDone / (overallTotal / 100)) : 0;
+
+        const etaDate   = addSeconds(new Date(), overallEta);
+        global.mainWindow.webContents.send('SetDataProgressBar', (overallProgress > 100) ? 100 : overallProgress, `${bytes(overallDone)} / ${bytes(overallTotal)} (${bytes(overallRate, 'MB')}/s) ETA: ${distanceInWordsToNow(etaDate)}`, false);
+
+        if (overallProgress >= 100)
+        {
+            global.ongoingDownloads.length = 0;
+
+            clearInterval(global.updateLoop);
+            globals.updateInProgress = false;
+
+            global.mainWindow.webContents.send('SetDataProgressBar', 0, '', true);
+
+            global.mainWindow.webContents.send('SetPlayButtonState', false);
+            global.mainWindow.webContents.send('SetPlayButtonText', 'Play');
+
+            global.mainWindow.webContents.send('SetValidateButtonState', false);
+            global.mainWindow.webContents.send('SetValidateButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
+        }
+    }, 1000);
 }
 
 ipcMain.on('BeginDownloadOrValidate', async function(event)
@@ -458,7 +443,7 @@ ipcMain.on('SelectDirectory', async function(event)
         properties: ['openDirectory']
       });
 
-      if (globals.updateInProgress == true || globals.validationInProgress == true)
+      if (globals.updateInProgress == true)
       {
         const warn = {
             type: 'warning',

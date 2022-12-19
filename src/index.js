@@ -15,10 +15,8 @@ const Button_Restart                = document.querySelector("#Button_Restart");
 const Button_Integrity              = document.querySelector("#Button_Integrity");
 
 // 2. Progress Bars
-const ProgressBar_Overall                = document.querySelector("#ProgressBar_Overall");
-const ProgressBar_Overall_Data_Or_Value  = document.querySelector("#ProgressBar_Overall_Data_Or_Value");
-const ProgressBar_Current                = document.querySelector("#ProgressBar_Current");
-const ProgressBar_Current_Data_Or_Value  = document.querySelector("#ProgressBar_Current_Data_Or_Value");
+const ProgressBar                   = document.querySelector("#ProgressBar");
+const ProgressBar_Data_Or_Value     = document.querySelector("#ProgressBar_Data_Or_Value");
 
 // 3. Modals
 const Modal_Settings                = document.querySelector("app-settings");
@@ -67,8 +65,8 @@ Button_Validate.addEventListener('click', function()
     Button_Play.textContent    = "Running";
     Button_Play.disabled       = true;
     Button_Validate.disabled   = true;
-    ProgressBar_Overall.hidden = false;
-    ProgressBar_Current.hidden = false;
+    ProgressBar.hidden         = false;
+
 
     ipcRenderer.send('BeginDownloadOrValidate');
 });
@@ -175,28 +173,16 @@ Button_Integrity.addEventListener('click', function()
 });
 
 // 2. Progress Bars
-// ProgressBar_Overall_Data_Or_Value
-ipcRenderer.on('SetDataProgressBar_Overall', function(event, percent, data, hide)
+// ProgressBar_Data_Or_Value
+ipcRenderer.on('SetDataProgressBar', function(event, percent, data, hide)
 {
     if (percent >= 0 && percent <= 100)
-        ProgressBar_Overall_Data_Or_Value.value = percent;
+        ProgressBar_Data_Or_Value.value = percent;
 
     if (data)
-        ProgressBar_Overall_Data_Or_Value.setAttribute("dataLabel", data);
+        ProgressBar_Data_Or_Value.setAttribute("dataLabel", data);
 
-    ProgressBar_Overall.hidden = hide;
-});
-
-// ProgressBar_Current_Data_Or_Value
-ipcRenderer.on('SetDataProgressBar_Current', function(event, percent, data, hide)
-{
-    if (percent >= 0 && percent <= 100)
-        ProgressBar_Current_Data_Or_Value.value = percent;
-
-    if (data != '')
-        ProgressBar_Current_Data_Or_Value.setAttribute("dataLabel", data);
-
-    ProgressBar_Current.hidden = hide;
+    ProgressBar.hidden = hide;
 });
 
 // 3. Modals
