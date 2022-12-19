@@ -4,6 +4,7 @@ const { ipcRenderer }               = require('electron');
 const Button_Play                   = document.querySelector("#Button_Play");
 const Button_Validate               = document.querySelector("#Button_Validate");
 const Button_SelectDirectory        = document.querySelector("#Button_SelectDirectory");
+const Button_SelectDirectory_Path   = document.querySelector("#Button_SelectDirectory_Path");
 const Button_SelectDirectory_First  = document.querySelector("#Button_SelectDirectory_First");
 const Button_Settings               = document.querySelector("#Button_Settings");
 const Button_Settings_Exit          = document.querySelector("#Button_Settings_Exit");
@@ -23,6 +24,7 @@ const Modal_Settings                = document.querySelector("app-settings");
 const Modal_Notification_Update     = document.querySelector("app-notification-update");
 const Modal_Notification_Integrity  = document.querySelector("app-notification-integrity-failed");
 const Modal_FirstTimeSetup          = document.querySelector("app-install");
+const Modal_Path                    = document.querySelector("app-path");
 
 // 4. Misc
 const GameLocationText              = document.querySelector("#GameLocationText");
@@ -86,6 +88,41 @@ Button_SelectDirectory.addEventListener('click', function()
 {
     ipcRenderer.send('SelectDirectory');
 });
+
+// Button_SelectDirectory_Path
+Button_SelectDirectory_Path.addEventListener('click', function()
+{
+    ipcRenderer.send('SelectDirectory_Path');
+});
+
+ipcRenderer.on('ShowPathSetup', function(event)
+{
+    Show_Modal_Path(true);
+});
+
+ipcRenderer.on('ClosePathSetup', function(event)
+{
+    Show_Modal_Path(false);
+});
+
+function Show_Modal_Path(show = false)
+{
+    if (!Modal_Path)
+        return;
+
+    var exists = Modal_Path.classList.contains('show');
+
+    if (show)
+    {
+        if (!exists)
+            Modal_Path.classList.add('show');
+    }
+    else
+    {
+        if (exists)
+            Modal_Path.classList.remove('show');
+    }
+}
 
 // Button_SelectDirectory_First
 Button_SelectDirectory_First.addEventListener('click', function()

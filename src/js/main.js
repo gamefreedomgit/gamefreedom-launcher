@@ -12,7 +12,8 @@ const { execPath }                    = require('process');
 
 const distanceInWordsToNow            = require('date-fns/formatDistanceToNow')
 const addSeconds                      = require('date-fns/addSeconds')
-const bytes                           = require('bytes')
+const bytes                           = require('bytes');
+const { pathExists }                  = require('fs-extra');
 
 const env         = process.env.NODE_ENV || 'development';
 
@@ -517,6 +518,48 @@ ipcMain.on('SelectDirectory_First', async function(event)
 
           global.mainWindow.webContents.send('SetPlayButtonState', false);
           global.mainWindow.webContents.send('SetPlayButtonText', 'Install');
+
+          update.initialize();
+        }
+        catch(err)
+        {
+          log.error(err);
+        }
+      }
+      else
+      {
+        const warn = {
+            type: 'warning',
+            title: 'Warning',
+            message: "Something went wrong with choosing your game path, please try again."
+        };
+
+        dialog.showMessageBox(warn);
+      }
+});
+
+ipcMain.on('SelectDirectory_Path', async function(event)
+{
+    console.log("Event: SelectDirectory_Path");
+
+    let dir = await dialog.showOpenDialog(global.mainWindow, {
+        properties: ['openDirectory']
+      });
+
+      if (dir && dir.filePaths.length > 0)
+      {
+        try
+        {
+          global.mainWindow.webContents.send('SetGameLocation', path.normalize(dir.filePaths[0]));
+          global.mainWindow.webContents.send('ClosePathSetup');
+
+          global.userSettings.gameLocation = dir.filePaths[0];
+          settings.save(app.getPath('userData'));
+
+          global.mainWindow.webContents.send('SetPlayButtonState', false);
+          global.mainWindow.webContents.send('SetPlayButtonText', 'Install');
+
+          update.initialize();
         }
         catch(err)
         {
