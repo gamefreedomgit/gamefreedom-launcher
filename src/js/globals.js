@@ -2,7 +2,9 @@ const globals = {
     initialized:          false,
     serverVersion:        0,
     updateInProgress:     false,
+    validationInProgress: false,
     launcherUpdateFound:  false,
+    needUpdate:           false,
 
     launcherInfo: 'https://cdn-1.gamefreedom.org/version.json',
     cataDownload: 'https://cdn-1.gamefreedom.org/maelstrom.json',

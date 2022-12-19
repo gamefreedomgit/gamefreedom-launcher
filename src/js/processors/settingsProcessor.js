@@ -1,7 +1,6 @@
-const fs                 = require('fs');
-const update             = require('./updateProcessor.js');
-const log                = require('./logProcessor.js');
-const { pathExistsSync } = require('fs-extra');
+const fs          = require('fs');
+const update      = require('./updateProcessor.js');
+const log         = require('./logProcessor.js');
 
 const default_settings = {
     gameName: "maelstrom",
@@ -52,12 +51,6 @@ module.exports = {
             if (global.userSettings.gameValidated == undefined) // old config
             {
                 write_default(location);
-                return;
-            }
-
-            if (!pathExistsSync(global.userSettings.gameLocation))
-            {
-                global.mainWindow.webContents.send('ShowPathSetup');
                 return;
             }
 

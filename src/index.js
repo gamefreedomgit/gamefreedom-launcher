@@ -4,7 +4,6 @@ const { ipcRenderer }               = require('electron');
 const Button_Play                   = document.querySelector("#Button_Play");
 const Button_Validate               = document.querySelector("#Button_Validate");
 const Button_SelectDirectory        = document.querySelector("#Button_SelectDirectory");
-const Button_SelectDirectory_Path   = document.querySelector("#Button_SelectDirectory_Path");
 const Button_SelectDirectory_First  = document.querySelector("#Button_SelectDirectory_First");
 const Button_Settings               = document.querySelector("#Button_Settings");
 const Button_Settings_Exit          = document.querySelector("#Button_Settings_Exit");
@@ -16,15 +15,16 @@ const Button_Restart                = document.querySelector("#Button_Restart");
 const Button_Integrity              = document.querySelector("#Button_Integrity");
 
 // 2. Progress Bars
-const ProgressBar                   = document.querySelector("#ProgressBar");
-const ProgressBar_Data_Or_Value     = document.querySelector("#ProgressBar_Data_Or_Value");
+const ProgressBar_Overall                = document.querySelector("#ProgressBar_Overall");
+const ProgressBar_Overall_Data_Or_Value  = document.querySelector("#ProgressBar_Overall_Data_Or_Value");
+const ProgressBar_Current                = document.querySelector("#ProgressBar_Current");
+const ProgressBar_Current_Data_Or_Value  = document.querySelector("#ProgressBar_Current_Data_Or_Value");
 
 // 3. Modals
 const Modal_Settings                = document.querySelector("app-settings");
 const Modal_Notification_Update     = document.querySelector("app-notification-update");
 const Modal_Notification_Integrity  = document.querySelector("app-notification-integrity-failed");
 const Modal_FirstTimeSetup          = document.querySelector("app-install");
-const Modal_Path                    = document.querySelector("app-path");
 
 // 4. Misc
 const GameLocationText              = document.querySelector("#GameLocationText");
@@ -67,8 +67,8 @@ Button_Validate.addEventListener('click', function()
     Button_Play.textContent    = "Running";
     Button_Play.disabled       = true;
     Button_Validate.disabled   = true;
-    ProgressBar.hidden         = false;
-
+    ProgressBar_Overall.hidden = false;
+    ProgressBar_Current.hidden = false;
 
     ipcRenderer.send('BeginDownloadOrValidate');
 });
@@ -88,41 +88,6 @@ Button_SelectDirectory.addEventListener('click', function()
 {
     ipcRenderer.send('SelectDirectory');
 });
-
-// Button_SelectDirectory_Path
-Button_SelectDirectory_Path.addEventListener('click', function()
-{
-    ipcRenderer.send('SelectDirectory_Path');
-});
-
-ipcRenderer.on('ShowPathSetup', function(event)
-{
-    Show_Modal_Path(true);
-});
-
-ipcRenderer.on('ClosePathSetup', function(event)
-{
-    Show_Modal_Path(false);
-});
-
-function Show_Modal_Path(show = false)
-{
-    if (!Modal_Path)
-        return;
-
-    var exists = Modal_Path.classList.contains('show');
-
-    if (show)
-    {
-        if (!exists)
-            Modal_Path.classList.add('show');
-    }
-    else
-    {
-        if (exists)
-            Modal_Path.classList.remove('show');
-    }
-}
 
 // Button_SelectDirectory_First
 Button_SelectDirectory_First.addEventListener('click', function()
@@ -210,16 +175,28 @@ Button_Integrity.addEventListener('click', function()
 });
 
 // 2. Progress Bars
-// ProgressBar_Data_Or_Value
-ipcRenderer.on('SetDataProgressBar', function(event, percent, data, hide)
+// ProgressBar_Overall_Data_Or_Value
+ipcRenderer.on('SetDataProgressBar_Overall', function(event, percent, data, hide)
 {
     if (percent >= 0 && percent <= 100)
-        ProgressBar_Data_Or_Value.value = percent;
+        ProgressBar_Overall_Data_Or_Value.value = percent;
 
     if (data)
-        ProgressBar_Data_Or_Value.setAttribute("dataLabel", data);
+        ProgressBar_Overall_Data_Or_Value.setAttribute("dataLabel", data);
 
-    ProgressBar.hidden = hide;
+    ProgressBar_Overall.hidden = hide;
+});
+
+// ProgressBar_Current_Data_Or_Value
+ipcRenderer.on('SetDataProgressBar_Current', function(event, percent, data, hide)
+{
+    if (percent >= 0 && percent <= 100)
+        ProgressBar_Current_Data_Or_Value.value = percent;
+
+    if (data != '')
+        ProgressBar_Current_Data_Or_Value.setAttribute("dataLabel", data);
+
+    ProgressBar_Current.hidden = hide;
 });
 
 // 3. Modals
