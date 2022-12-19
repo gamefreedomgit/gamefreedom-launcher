@@ -68,7 +68,7 @@ module.exports = {
         global.updateLoopId = setInterval(function()
         {
             module.exports.checkForUpdates();
-        }, 5000);
+        }, 60000);
 
         global.launcherUpdateLoop = setInterval(function()
         {

@@ -166,6 +166,8 @@ global.updateLoop         = null;
 
 function startUpdateLoop()
 {
+    let initialize = false;
+
     if (global.updateLoop != null)
     {
         clearInterval(global.updateLoop);
@@ -177,10 +179,15 @@ function startUpdateLoop()
         if (!IsSelectedGameValidated())
            return;
 
-        global.queuedDownloads.forEach(download =>
+        if (!initialize)
         {
-            update.downloadFile(download.url, download.path);
-        });
+            global.queuedDownloads.forEach(download =>
+            {
+                update.downloadFile(download.url, download.path);
+            });
+
+            initialize = true;
+        }
 
         // Calculate overall progress.
         let overallDone     = 0;
@@ -224,7 +231,7 @@ function startUpdateLoop()
             global.mainWindow.webContents.send('SetValidateButtonState', false);
             global.mainWindow.webContents.send('SetValidateButtonText', '<i class="fa fa-bolt" aria-hidden="true"></i> Run');
         }
-    }, 1500);
+    }, 1000);
 }
 
 ipcMain.on('BeginDownloadOrValidate', async function(event)
