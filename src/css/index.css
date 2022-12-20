@@ -38,15 +38,13 @@ header {
 
 .part1 { grid-area: part1; }
 .part2 { grid-area: part2; }
-.part3 { grid-area: part3; }
 
 body > footer {
   position: absolute;
   display: grid;
   grid-gap: 10px;
   grid-template-areas: 'part1'
-                       'part2'
-                       'part3';
+                       'part2';
   grid-template-columns: max-content;
   bottom: 0;
   background: #00000000;
@@ -56,7 +54,7 @@ body > footer {
 }
 
 body > footer .part1,
-body > footer .part2, .part3 {
+body > footer .part2 {
   width: 100%;
 }
 
@@ -220,7 +218,7 @@ header button:last-child {
   text-align: center;
 }
 
-.part1, .part3 {
+.part1, .part2 {
   margin-right: 5px;
 }
 
@@ -291,6 +289,7 @@ app-content {
 
 app-settings,
 app-install,
+app-path,
 app-notification-update,
 app-notification-integrity-failed {
   display: none;
@@ -308,6 +307,7 @@ app-notification-integrity-failed {
 
 app-settings.show,
 app-install.show,
+app-path.show,
 app-notification-update.show,
 app-notification-integrity-failed.show {
   display: flex;
@@ -315,6 +315,7 @@ app-notification-integrity-failed.show {
 
 app-settings > div,
 app-install > div,
+app-path > div,
 app-notification-update > div,
 app-notification-integrity-failed > div {
   width: 100%;
@@ -329,6 +330,7 @@ app-notification-integrity-failed > div {
 
 app-settings hr,
 app-install hr,
+app-path hr,
 app-notification-update hr,
 app-notification-integrity-failed hr {
   height: 1px;
@@ -344,6 +346,7 @@ app-settings #GameLocationText {
 
 app-settings section,
 app-install section,
+app-path section,
 app-notification-update section,
 app-notification-integrity-failed section {
   display: flex;
@@ -376,6 +379,7 @@ app-settings input:read-only {
 
 app-settings h1,
 app-install h1,
+app-path h1,
 app-notification-update h1,
 app-notification-integrity-failed h1 {
   margin: 0;
@@ -385,6 +389,7 @@ app-notification-integrity-failed h1 {
 
 app-settings ul,
 app-install ul,
+app-path ul,
 app-notification-update ul,
 app-notification-integrity-failed ul {
   margin: 0;
@@ -394,6 +399,7 @@ app-notification-integrity-failed ul {
 
 app-settings ul li,
 app-install ul li,
+app-path ul li,
 app-notification-update ul li,
 app-notification-integrity-failed ul li {
   display: flex;
@@ -402,6 +408,7 @@ app-notification-integrity-failed ul li {
 
 app-settings ul li + li,
 app-install ul li + li,
+app-path ul li + li,
 app-notification-update ul li + li,
 app-notification-integrity-failed ul li + li {
   margin-top: 10px;
@@ -409,6 +416,7 @@ app-notification-integrity-failed ul li + li {
 
 app-settings footer,
 app-install footer,
+app-path footer,
 app-notification-update footer,
 app-notification-integrity-failed footer {
   margin-top: 20px;
@@ -419,6 +427,7 @@ app-notification-integrity-failed footer {
 
 app-settings .button,
 app-install .button,
+app-path .button,
 app-notification-update .button,
 app-notification-integrity-failed .button {
   cursor: pointer;
@@ -434,6 +443,7 @@ app-notification-integrity-failed .button {
 
 app-settings .button:disabled,
 app-install .button:disabled,
+app-path .button:disabled,
 app-notification-update .button:disabled,
 app-notification-integrity-failed .button:disabled {
   background-color: #858585;
@@ -444,6 +454,7 @@ app-notification-integrity-failed .button:disabled {
 
 app-settings .exit,
 app-install .exit,
+app-path .exit,
 app-notification-update .exit,
 app-notification-integrity-failed .exit {
   background-color: transparent;
@@ -451,6 +462,7 @@ app-notification-integrity-failed .exit {
 
 app-settings .button:hover,
 app-install .button:hover,
+app-path .button:hover,
 app-notification-update .button:hover,
 app-notification-integrity-failed .button:hover {
     border: 2px solid #e54c4c;
@@ -458,6 +470,7 @@ app-notification-integrity-failed .button:hover {
 
 app-settings .button.exit:hover,
 app-install .button.exit:hover,
+app-path .button.exit:hover,
 app-notification-update .button.exit:hover,
 app-notification-integrity-failed .button.exit:hover {
   background-color: rgba(0, 0, 0, 0.2);
@@ -465,6 +478,7 @@ app-notification-integrity-failed .button.exit:hover {
 
 app-settings .button.edit,
 app-install .button.edit,
+app-path .button.edit,
 app-notification-update .button.edit,
 app-notification-integrity-failed .button.edit {
   font-size: 15px;
@@ -478,6 +492,7 @@ app-settings #LauncherVersion {
 
 app-settings section i,
 app-install section i,
+app-path section i,
 app-notification-update section i,
 app-notification-integrity-failed section i {
   margin-left: 5px;
@@ -487,6 +502,7 @@ app-notification-integrity-failed section i {
 
 app-settings section i:hover,
 app-install section i:hover,
+app-path section i:hover,
 app-notification-update section i:hover,
 app-notification-integrity-failed section i:hover {
   color: #cacaca;
@@ -494,6 +510,7 @@ app-notification-integrity-failed section i:hover {
 
 app-settings > div > span,
 app-install > div > span,
+app-path > div > span,
 app-notification-update > div > span,
 app-notification-integrity-failed > div > span {
   margin-left: 7px;
